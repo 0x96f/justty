@@ -1,0 +1,33 @@
+{
+  "fill" : {
+    "solid" : "display-p3:0.14902,0.14118,0.15294,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "prompt.png",
+          "name" : "prompt",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              -47.671875
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
