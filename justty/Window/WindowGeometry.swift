@@ -10,7 +10,9 @@ import AppKit
 @MainActor
 enum WindowGeometry {
     /// Point size for a new window's content area (tab bar + padded terminal).
-    static func contentSize(from settings: AppSettings = .shared) -> CGSize {
+    static func contentSize(from settings: AppSettings? = nil) -> CGSize {
+        // Resolve .shared in the @MainActor body — default args are nonisolated.
+        let settings = settings ?? .shared
         let cell = estimatedCellSize(from: settings)
         let padding = CGFloat(settings.terminalPadding) * 2
         let width = CGFloat(settings.windowColumns) * cell.width + padding
@@ -23,7 +25,8 @@ enum WindowGeometry {
     /// Applies starting size and position once per window.
     /// User origin is top-left of the visible desktop (below menu bar);
     /// Cocoa origin is bottom-left.
-    static func applyInitialFrame(to window: NSWindow, settings: AppSettings = .shared) {
+    static func applyInitialFrame(to window: NSWindow, settings: AppSettings? = nil) {
+        let settings = settings ?? .shared
         let size = contentSize(from: settings)
         window.setContentSize(size)
 

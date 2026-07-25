@@ -8,10 +8,12 @@ import os
 import SwiftUI
 
 enum Theme {
-    static let defaultLightThemeName = "GitHub Light Default"
-    static let defaultDarkThemeName = "GitHub Dark Default"
+    // nonisolated: SWIFT_DEFAULT_ACTOR_ISOLATION is MainActor; terminal()/isDark/
+    // backgroundColor must stay readable off the main actor via the lock below.
+    nonisolated static let defaultLightThemeName = "GitHub Light Default"
+    nonisolated static let defaultDarkThemeName = "GitHub Dark Default"
 
-    private static let selection = OSAllocatedUnfairLock(
+    private nonisolated static let selection = OSAllocatedUnfairLock(
         initialState: defaultDarkDefinition
     )
 
@@ -29,7 +31,6 @@ enum Theme {
     }
 
     /// Re-resolves the selected theme by name. Unknown names keep the dark default.
-    @MainActor
     static func reloadSelection(_ name: String) {
         let resolved = definition(named: name) ?? defaultDarkDefinition
         selection.withLock { $0 = resolved }
@@ -77,7 +78,7 @@ enum Theme {
         return names
     }
 
-    private static func color(hex: String) -> Color? {
+    private nonisolated static func color(hex: String) -> Color? {
         var value = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if value.hasPrefix("#") {
             value.removeFirst()
