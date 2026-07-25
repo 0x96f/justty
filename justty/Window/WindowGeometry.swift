@@ -21,7 +21,8 @@ enum WindowGeometry {
     }
 
     /// Applies starting size and position once per window.
-    /// User origin is top-left of the main screen; Cocoa origin is bottom-left.
+    /// User origin is top-left of the visible desktop (below menu bar);
+    /// Cocoa origin is bottom-left.
     static func applyInitialFrame(to window: NSWindow, settings: AppSettings = .shared) {
         let size = contentSize(from: settings)
         window.setContentSize(size)
@@ -29,19 +30,21 @@ enum WindowGeometry {
         let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first
         guard let screen else { return }
 
-        let screenFrame = screen.frame
+        // Use visibleFrame so X/Y share the same usable origin. Measuring from
+        // screen.frame made Y include the menu bar while X did not.
         let visible = screen.visibleFrame
+        let frameSize = window.frame.size
         var origin = NSPoint(
-            x: screenFrame.origin.x + CGFloat(settings.windowOriginX),
-            y: screenFrame.origin.y
-                + screenFrame.height
+            x: visible.origin.x + CGFloat(settings.windowOriginX),
+            y: visible.origin.y
+                + visible.height
                 - CGFloat(settings.windowOriginY)
-                - size.height
+                - frameSize.height
         )
 
         // Keep the window inside the usable area (menu bar / dock).
-        origin.x = min(max(origin.x, visible.minX), visible.maxX - size.width)
-        origin.y = min(max(origin.y, visible.minY), visible.maxY - size.height)
+        origin.x = min(max(origin.x, visible.minX), visible.maxX - frameSize.width)
+        origin.y = min(max(origin.y, visible.minY), visible.maxY - frameSize.height)
 
         window.setFrameOrigin(origin)
     }

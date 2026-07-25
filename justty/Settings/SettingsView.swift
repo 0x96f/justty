@@ -114,7 +114,7 @@ struct SettingsView: View {
                         .multilineTextAlignment(.trailing)
                     }
                 }
-                Text("Position from the top-left of the main screen")
+                Text("Position from the top-left of the visible desktop")
                     .font(.callout)
                     .foregroundStyle(.secondary)
 
