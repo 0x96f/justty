@@ -17,12 +17,32 @@ A simple native macOS terminal built with Swift and [libghostty](https://github.
 - Font family, size, weight, and line height
 - Window padding, starting position, and character-grid size
 
+## Install
+
+1. Download `Justty-macos.zip` from the [latest release](https://github.com/0x96f/justty/releases/latest).
+2. Unzip it - you should get `Justty.app`.
+3. Move `Justty.app` somewhere lasting (for example `/Applications` or `~/Applications`).
+4. Open it (see below if macOS blocks the first launch).
+
+## Unsigned builds
+
+Release builds are **not code-signed or notarized**. On first open, Gatekeeper may say the app “can’t be opened because it is from an unidentified developer.”
+
+**Recommended:** right-click (or Control-click) `Justty.app` → **Open** → **Open** again in the dialog. You only need to do this once.
+
+**Alternative** (clears the quarantine flag after download):
+
+```bash
+xattr -dr com.apple.quarantine /path/to/Justty.app
+open /path/to/Justty.app
+```
+
 ## Requirements
 
 - macOS 15.6+
-- Xcode 16+ (with Swift 5 / macOS SDK)
+- Xcode 16+ (with Swift 5 / macOS SDK) to build from source
 
-## Setup
+## Build from source
 
 ```bash
 git clone --recurse-submodules <your-repo-url> justty
