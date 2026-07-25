@@ -7,6 +7,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
+    @State private var showingShortcuts = false
 
     var body: some View {
         Form {
@@ -143,9 +144,18 @@ struct SettingsView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+
+            Section("Keyboard Shortcuts") {
+                Button("View Keyboard Shortcuts…") {
+                    showingShortcuts = true
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 440, height: 500)
-        .padding(4)
+        .frame(width: 440, height: 540)
+        .padding(8)
+        .sheet(isPresented: $showingShortcuts) {
+            ShortcutsView()
+        }
     }
 }

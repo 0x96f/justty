@@ -41,7 +41,7 @@ enum JusttyTerminalConfig {
             builder.withCustom("window-padding-color", "extend")
             // Clear Ghostty defaults so Cmd-T / Cmd-W stay with Justty.
             builder.withCustom("keybind", "clear")
-            for keybind in hostKeybinds {
+            for keybind in ShortcutsCatalog.hostKeybinds {
                 builder.withCustom("keybind", keybind)
             }
             builder.withCustom("command", "shell:\(command)")
@@ -91,20 +91,6 @@ enum JusttyTerminalConfig {
         }
         return ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
     }
-
-    private static let hostKeybinds = [
-        "alt+left=esc:b",
-        "alt+right=esc:f",
-        "super+left=text:\\x01",
-        "super+right=text:\\x05",
-        "super+backspace=text:\\x15",
-        "super+c=copy_to_clipboard",
-        "super+v=paste_from_clipboard",
-        "super+home=scroll_to_top",
-        "super+end=scroll_to_bottom",
-        "super+page_up=scroll_page_up",
-        "super+page_down=scroll_page_down",
-    ]
 
     private static func shellQuote(_ value: String) -> String {
         "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
