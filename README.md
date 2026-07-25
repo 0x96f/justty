@@ -12,10 +12,13 @@ A simple native macOS terminal built with Swift and [libghostty](https://github.
 ## Features
 
 - Real PTY shells via Ghostty’s Metal renderer
-- Tabs (⌘T / ⌘W, ⌘⇧[ / ⌘⇧])
+- Multi-window and tabs (⌘N / ⌘T / ⌘W, ⌘⇧[ / ⌘⇧])
 - Color themes from the GhosttyTheme catalog
 - Font family, size, weight, and line height
 - Window padding, starting position, and character-grid size
+- In-app keyboard shortcuts sheet (Settings)
+
+Full list: [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Install
 
@@ -37,6 +40,8 @@ xattr -dr com.apple.quarantine /path/to/Justty.app
 open /path/to/Justty.app
 ```
 
+More help: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
 ## Requirements
 
 - macOS 15.6+
@@ -57,6 +62,8 @@ git submodule update --init --recursive
 ```
 
 Build and run the **justty** scheme. App sandbox is **off** so Ghostty can spawn a real shell (`.exec`).
+
+If packages fail to resolve or shells won’t start, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## License
 
