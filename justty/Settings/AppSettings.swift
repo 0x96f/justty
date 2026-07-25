@@ -11,6 +11,8 @@ import Foundation
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
+    private let defaults: UserDefaults
+
     private enum Key {
         static let theme = "theme"
         static let fontFamily = "fontFamily"
@@ -45,7 +47,7 @@ final class AppSettings: ObservableObject {
     @Published var theme: String {
         didSet {
             guard !isLoading else { return }
-            UserDefaults.standard.set(theme, forKey: Key.theme)
+            defaults.set(theme, forKey: Key.theme)
             Theme.reloadSelection(theme)
             applyAppAppearance()
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
@@ -55,7 +57,7 @@ final class AppSettings: ObservableObject {
     @Published var fontFamily: String {
         didSet {
             guard !isLoading else { return }
-            UserDefaults.standard.set(fontFamily, forKey: Key.fontFamily)
+            defaults.set(fontFamily, forKey: Key.fontFamily)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -68,7 +70,7 @@ final class AppSettings: ObservableObject {
                 fontSize = clamped
                 return
             }
-            UserDefaults.standard.set(fontSize, forKey: Key.fontSize)
+            defaults.set(fontSize, forKey: Key.fontSize)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -76,7 +78,7 @@ final class AppSettings: ObservableObject {
     @Published var fontWeight: FontWeightSetting {
         didSet {
             guard !isLoading else { return }
-            UserDefaults.standard.set(fontWeight.rawValue, forKey: Key.fontWeight)
+            defaults.set(fontWeight.rawValue, forKey: Key.fontWeight)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -89,7 +91,7 @@ final class AppSettings: ObservableObject {
                 lineHeight = clamped
                 return
             }
-            UserDefaults.standard.set(lineHeight, forKey: Key.lineHeight)
+            defaults.set(lineHeight, forKey: Key.lineHeight)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -102,7 +104,7 @@ final class AppSettings: ObservableObject {
                 terminalPadding = clamped
                 return
             }
-            UserDefaults.standard.set(terminalPadding, forKey: Key.terminalPadding)
+            defaults.set(terminalPadding, forKey: Key.terminalPadding)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -115,7 +117,7 @@ final class AppSettings: ObservableObject {
                 windowOriginX = clamped
                 return
             }
-            UserDefaults.standard.set(windowOriginX, forKey: Key.windowOriginX)
+            defaults.set(windowOriginX, forKey: Key.windowOriginX)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -128,7 +130,7 @@ final class AppSettings: ObservableObject {
                 windowOriginY = clamped
                 return
             }
-            UserDefaults.standard.set(windowOriginY, forKey: Key.windowOriginY)
+            defaults.set(windowOriginY, forKey: Key.windowOriginY)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -141,7 +143,7 @@ final class AppSettings: ObservableObject {
                 windowColumns = clamped
                 return
             }
-            UserDefaults.standard.set(windowColumns, forKey: Key.windowColumns)
+            defaults.set(windowColumns, forKey: Key.windowColumns)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -154,7 +156,7 @@ final class AppSettings: ObservableObject {
                 windowRows = clamped
                 return
             }
-            UserDefaults.standard.set(windowRows, forKey: Key.windowRows)
+            defaults.set(windowRows, forKey: Key.windowRows)
             NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
         }
     }
@@ -163,8 +165,12 @@ final class AppSettings: ObservableObject {
     /// (including `NSApp`, which is still nil during `App.init`) do not run.
     private var isLoading = true
 
-    private init() {
-        let defaults = UserDefaults.standard
+    convenience init() {
+        self.init(defaults: .standard)
+    }
+
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
 
         theme = Self.knownTheme(defaults.string(forKey: Key.theme))
             ?? Theme.defaultDarkThemeName

@@ -35,21 +35,39 @@ enum WindowGeometry {
 
         // Use visibleFrame so X/Y share the same usable origin. Measuring from
         // screen.frame made Y include the menu bar while X did not.
-        let visible = screen.visibleFrame
-        let frameSize = window.frame.size
-        var origin = NSPoint(
-            x: visible.origin.x + CGFloat(settings.windowOriginX),
-            y: visible.origin.y
-                + visible.height
-                - CGFloat(settings.windowOriginY)
+        let origin = frameOrigin(
+            visibleFrame: screen.visibleFrame,
+            originX: settings.windowOriginX,
+            originY: settings.windowOriginY,
+            frameSize: window.frame.size
+        )
+        window.setFrameOrigin(origin)
+    }
+
+    /// Converts top-left desktop offsets into a Cocoa bottom-left origin and
+    /// clamps so the window stays inside the usable screen area.
+    static func frameOrigin(
+        visibleFrame: CGRect,
+        originX: Int,
+        originY: Int,
+        frameSize: CGSize
+    ) -> CGPoint {
+        var origin = CGPoint(
+            x: visibleFrame.origin.x + CGFloat(originX),
+            y: visibleFrame.origin.y
+                + visibleFrame.height
+                - CGFloat(originY)
                 - frameSize.height
         )
-
-        // Keep the window inside the usable area (menu bar / dock).
-        origin.x = min(max(origin.x, visible.minX), visible.maxX - frameSize.width)
-        origin.y = min(max(origin.y, visible.minY), visible.maxY - frameSize.height)
-
-        window.setFrameOrigin(origin)
+        origin.x = min(
+            max(origin.x, visibleFrame.minX),
+            visibleFrame.maxX - frameSize.width
+        )
+        origin.y = min(
+            max(origin.y, visibleFrame.minY),
+            visibleFrame.maxY - frameSize.height
+        )
+        return origin
     }
 
     private static func estimatedCellSize(from settings: AppSettings) -> CGSize {

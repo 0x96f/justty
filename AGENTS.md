@@ -12,6 +12,11 @@
 - App sandbox is **off** so Ghostty `.exec` can spawn a real login shell
 - Requires the `Vendor/libghostty-spm` git submodule (`git submodule update --init --recursive`)
 
+## Testing
+
+- Host unit tests live in `justtyTests/` (Swift Testing)
+- Run: `xcodebuild -project justty.xcodeproj -scheme justty -destination 'platform=macOS' test`
+
 ## Code Conventions
 
 - SwiftUI owns the app shell (windows, tabs, settings menus)

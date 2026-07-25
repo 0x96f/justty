@@ -30,22 +30,45 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
 
     /// True when the PTY foreground process is not the login shell.
     var hasRunningCommand: Bool {
-        guard let foreground = terminalView.foregroundPid else { return false }
-        let name = Self.processName(for: foreground)
+        let foreground = terminalView.foregroundPid
+        let name = foreground.flatMap(Self.processName(for:))
+        let result = Self.hasRunningCommand(
+            foregroundPid: foreground,
+            foregroundName: name,
+            shellName: shellName,
+            shellPid: shellPid
+        )
+        if let locked = result.lockedShellPid {
+            shellPid = locked
+        }
+        return result.isBusy
+    }
+
+    /// Pure busy policy for close-confirm without reading the live PTY.
+    /// When the foreground is the login shell, `lockedShellPid` is that pid.
+    static func hasRunningCommand(
+        foregroundPid: pid_t?,
+        foregroundName: String?,
+        shellName: String,
+        shellPid: pid_t?
+    ) -> (isBusy: Bool, lockedShellPid: pid_t?) {
+        guard let foregroundPid else {
+            return (false, nil)
+        }
 
         // Idle when the foreground process is our login shell (also locks in shellPid).
-        if name == shellName {
-            shellPid = foreground
-            return false
+        if foregroundName == shellName {
+            return (false, foregroundPid)
         }
 
         if let shellPid {
-            return foreground != shellPid
+            return (foregroundPid != shellPid, nil)
         }
 
         // Shell not observed yet: treat a non-shell foreground as busy, but
         // ignore the brief `/bin/sh` wrapper used to exec the login shell.
-        return name != nil && name != "sh"
+        let isBusy = foregroundName != nil && foregroundName != "sh"
+        return (isBusy, nil)
     }
 
     override init() {

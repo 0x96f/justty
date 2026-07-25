@@ -10,7 +10,7 @@ import Foundation
 @MainActor
 final class TabManager: ObservableObject {
     @Published private(set) var sessions: [TerminalSession] = []
-    @Published var selectedID: TerminalSession.ID?
+    @Published private(set) var selectedID: TerminalSession.ID?
 
     var selectedSession: TerminalSession? {
         sessions.first { $0.id == selectedID }
@@ -20,10 +20,27 @@ final class TabManager: ObservableObject {
         sessions.filter { $0.id != selectedID }
     }
 
+    private var roster = TabRoster()
     private var cancellables = Set<AnyCancellable>()
+    private let makeSession: () -> TerminalSession
+    private let confirmCloseHandler: (TerminalSession, @escaping () -> Void) -> Void
+    private let closeWindowHandler: (NSWindow?) -> Void
 
-    init() {
-        newTab()
+    init(
+        makeSession: (() -> TerminalSession)? = nil,
+        createInitialTab: Bool = true,
+        confirmClose: ((TerminalSession, @escaping () -> Void) -> Void)? = nil,
+        closeWindow: ((NSWindow?) -> Void)? = nil
+    ) {
+        self.makeSession = makeSession ?? { TerminalSession() }
+        self.closeWindowHandler = closeWindow ?? { window in
+            DispatchQueue.main.async { window?.close() }
+        }
+        self.confirmCloseHandler = confirmClose ?? Self.defaultConfirmClose
+
+        if createInitialTab {
+            newTab()
+        }
         NotificationCenter.default.publisher(for: .justtySettingsDidChange)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.refreshAppearance() }
@@ -31,17 +48,18 @@ final class TabManager: ObservableObject {
     }
 
     func newTab() {
-        let session = TerminalSession()
+        let session = makeSession()
         session.onExited = { [weak self] exited in
             self?.close(exited, fromShellExit: true)
         }
         sessions.append(session)
-        selectedID = session.id
+        roster.add(session.id)
+        selectedID = roster.selectedID
     }
 
     func select(_ id: TerminalSession.ID) {
-        guard sessions.contains(where: { $0.id == id }) else { return }
-        selectedID = id
+        roster.select(id)
+        selectedID = roster.selectedID
     }
 
     func closeSelected() {
@@ -55,11 +73,13 @@ final class TabManager: ObservableObject {
         skipConfirm: Bool = false
     ) {
         if !fromShellExit, !skipConfirm, session.hasRunningCommand {
-            confirmClose(session)
+            confirmCloseHandler(session) { [weak self] in
+                self?.close(session, skipConfirm: true)
+            }
             return
         }
 
-        guard let index = sessions.firstIndex(where: { $0.id == session.id }) else {
+        guard sessions.contains(where: { $0.id == session.id }) else {
             return
         }
 
@@ -72,29 +92,45 @@ final class TabManager: ObservableObject {
 
         // Drop from the array before terminate so any late surface-close
         // callback cannot re-enter and remove(at:) with a stale index.
-        sessions.remove(at: index)
+        sessions.removeAll { $0.id == session.id }
+        let outcome = roster.remove(id: session.id, fromShellExit: fromShellExit)
+        selectedID = roster.selectedID
+
         if !fromShellExit, !session.hasExited {
             session.terminate()
         }
-        if sessions.isEmpty {
-            // Shell exit keeps the window alive with a fresh tab; user close
-            // of the last tab dismisses the window instead.
-            if fromShellExit {
-                newTab()
-            } else {
-                DispatchQueue.main.async {
-                    windowToClose?.close()
-                }
-            }
-            return
-        }
-        if selectedID == session.id {
-            let nextIndex = min(index, sessions.count - 1)
-            selectedID = sessions[nextIndex].id
+
+        switch outcome {
+        case .openReplacementTab:
+            // Shell exit keeps the window alive with a fresh tab.
+            newTab()
+        case .dismissWindow:
+            closeWindowHandler(windowToClose)
+        case .remaining, .notFound:
+            break
         }
     }
 
-    private func confirmClose(_ session: TerminalSession) {
+    func selectNext() {
+        roster.selectNext()
+        selectedID = roster.selectedID
+    }
+
+    func selectPrevious() {
+        roster.selectPrevious()
+        selectedID = roster.selectedID
+    }
+
+    func refreshAppearance() {
+        for session in sessions {
+            session.applyAppearance()
+        }
+    }
+
+    private static func defaultConfirmClose(
+        _ session: TerminalSession,
+        onConfirm: @escaping () -> Void
+    ) {
         let alert = NSAlert()
         alert.messageText = "Close this tab?"
         alert.informativeText =
@@ -103,11 +139,11 @@ final class TabManager: ObservableObject {
         alert.addButton(withTitle: "Close")
         alert.addButton(withTitle: "Cancel")
 
-        let respond: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+        let respond: (NSApplication.ModalResponse) -> Void = { response in
             guard response == .alertFirstButtonReturn else { return }
             // Let the sheet finish dismissing before closing tab/window.
             DispatchQueue.main.async {
-                self?.close(session, skipConfirm: true)
+                onConfirm()
             }
         }
 
@@ -115,28 +151,6 @@ final class TabManager: ObservableObject {
             alert.beginSheetModal(for: window, completionHandler: respond)
         } else {
             respond(alert.runModal())
-        }
-    }
-
-    func selectNext() {
-        guard let selectedID,
-              let index = sessions.firstIndex(where: { $0.id == selectedID })
-        else { return }
-        let next = sessions[(index + 1) % sessions.count]
-        self.selectedID = next.id
-    }
-
-    func selectPrevious() {
-        guard let selectedID,
-              let index = sessions.firstIndex(where: { $0.id == selectedID })
-        else { return }
-        let previous = sessions[(index - 1 + sessions.count) % sessions.count]
-        self.selectedID = previous.id
-    }
-
-    func refreshAppearance() {
-        for session in sessions {
-            session.applyAppearance()
         }
     }
 }
