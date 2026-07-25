@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        run: |
+          for app in \
+            /Applications/Xcode_26.6.app \
+            /Applications/Xcode_26.5.app \
+            /Applications/Xcode_26.4.1.app \
+            /Applications/Xcode.app
+          do
+            if [ -d "$app" ]; then
+              sudo xcode-select -s "$app"
+              break
+            fi
+          done
+          xcodebuild -version
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project justty.xcodeproj \
+            -scheme justty \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package
+        run: |
+          ditto -c -k --keepParent \
+            DerivedData/Build/Products/Release/Justty.app \
+            Justty-macos.zip
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            Justty-macos.zip \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
