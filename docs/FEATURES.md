@@ -1,6 +1,6 @@
 # Justty features
 
-Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github.com/egoist-labs/libghostty-spm)). It targets quick commands, not full Ghostty parity. Requires macOS 15.6+.
+Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github.com/Lakr233/libghostty-spm)). It targets quick commands, not full Ghostty parity. Requires macOS 15.6+.
 
 ## Windows & tabs
 
