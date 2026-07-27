@@ -2,7 +2,7 @@
 
 ## Gatekeeper blocks the app
 
-Release builds are unsigned. On first open, macOS may refuse to launch the app.
+Release builds are self-signed (not notarized). On first open, macOS may refuse to launch the app.
 
 **Recommended:** right-click (or Control-click) `Justty.app` → **Open** → **Open** again. Once is enough.
 
@@ -13,7 +13,14 @@ xattr -dr com.apple.quarantine /path/to/Justty.app
 open /path/to/Justty.app
 ```
 
-See also the Unsigned builds section in the [README](../README.md).
+To confirm the release signature:
+
+```bash
+codesign -dv --verbose=4 /path/to/Justty.app
+# expect Authority=Justty Self-Signed
+```
+
+See also the Self-signed builds section in the [README](../README.md) and [SIGNING.md](SIGNING.md).
 
 ## Ghostty packages fail to resolve / missing submodule
 

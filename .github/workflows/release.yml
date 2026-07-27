@@ -31,6 +31,28 @@ jobs:
           done
           xcodebuild -version
 
+      # Same stable self-signed identity on every release so users can verify
+      # Authority=Justty Self-Signed. Generate secrets per docs/SIGNING.md.
+      - name: Import signing certificate
+        env:
+          P12_BASE64: ${{ secrets.SIGNING_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.SIGNING_P12_PASSWORD }}
+        run: |
+          if [ -z "${P12_BASE64}" ] || [ -z "${P12_PASSWORD}" ]; then
+            echo "::error::SIGNING_P12_BASE64 and SIGNING_P12_PASSWORD secrets are required. See docs/SIGNING.md."
+            exit 1
+          fi
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KPW="$(openssl rand -base64 24)"
+          echo "${P12_BASE64}" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KPW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KPW" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "${P12_PASSWORD}" -A -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KPW" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | sed 's/"//g')
+          rm -f "$RUNNER_TEMP/cert.p12"
+
       - name: Build
         run: |
           xcodebuild \
@@ -39,8 +61,20 @@ jobs:
             -configuration Release \
             -destination 'platform=macOS' \
             -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Justty Self-Signed" \
+            OTHER_CODE_SIGN_FLAGS="--timestamp=none" \
             build
+
+      - name: Verify signature
+        run: |
+          APP="DerivedData/Build/Products/Release/Justty.app"
+          codesign -dv --verbose=4 "$APP"
+          codesign --verify --verbose=4 "$APP"
+          if ! codesign -dv --verbose=4 "$APP" 2>&1 | grep -q 'Authority=Justty Self-Signed'; then
+            echo "::error::Expected Authority=Justty Self-Signed"
+            exit 1
+          fi
 
       - name: Package
         run: |

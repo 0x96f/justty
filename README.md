@@ -27,9 +27,17 @@ Full list: [docs/FEATURES.md](docs/FEATURES.md).
 3. Move `Justty.app` somewhere lasting (for example `/Applications` or `~/Applications`).
 4. Open it (see below if macOS blocks the first launch).
 
-## Unsigned builds
+## Self-signed builds
 
-Release builds are **not code-signed or notarized**. On first open, Gatekeeper may say the app “can’t be opened because it is from an unidentified developer.”
+Release builds are signed with a stable **Justty Self-Signed** identity (not an Apple Developer ID / not notarized). Verify:
+
+```bash
+codesign -dv --verbose=4 Justty.app
+# expect Authority=Justty Self-Signed
+codesign --verify --verbose=4 Justty.app
+```
+
+Gatekeeper may still say the app “can’t be opened because it is from an unidentified developer.”
 
 **Recommended:** right-click (or Control-click) `Justty.app` → **Open** → **Open** again in the dialog. You only need to do this once.
 
@@ -40,7 +48,7 @@ xattr -dr com.apple.quarantine /path/to/Justty.app
 open /path/to/Justty.app
 ```
 
-More help: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+More help: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md). Maintainers: [docs/SIGNING.md](docs/SIGNING.md).
 
 ## Requirements
 
