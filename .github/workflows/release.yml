@@ -90,3 +90,32 @@ jobs:
             Justty-macos.zip \
             --title "$GITHUB_REF_NAME" \
             --generate-notes
+
+      - name: Update Homebrew cask
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "${TAP_TOKEN}" ]; then
+            echo "::warning::HOMEBREW_TAP_TOKEN secret not set — skipping cask bump. See docs/HOMEBREW.md."
+            exit 0
+          fi
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA="$(shasum -a 256 Justty-macos.zip | awk '{print $1}')"
+          git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/0x96f/homebrew-justty.git" tap
+          CASK_FILE="tap/Casks/justty.rb"
+          if [ ! -f "$CASK_FILE" ]; then
+            echo "::error::$CASK_FILE not found in tap."
+            exit 1
+          fi
+          sed -i '' -E "s|^  version \".*\"|  version \"${VERSION}\"|" "$CASK_FILE"
+          sed -i '' -E "s|^  sha256 \".*\"|  sha256 \"${SHA}\"|" "$CASK_FILE"
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/justty.rb
+          if git diff --cached --quiet; then
+            echo "No cask changes to commit."
+          else
+            git commit -m "justty ${VERSION}"
+            git push
+          fi

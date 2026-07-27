@@ -5,6 +5,7 @@
 - [docs/FEATURES.md](docs/FEATURES.md) - user-facing feature inventory (tabs, settings, shortcuts, fixed Ghostty options)
 - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Gatekeeper, submodules, DerivedData, sandbox
 - [docs/SIGNING.md](docs/SIGNING.md) - stable self-signed release identity + CI secrets
+- [docs/HOMEBREW.md](docs/HOMEBREW.md) - personal tap install + `HOMEBREW_TAP_TOKEN` for cask bumps
 
 ## Building
 

@@ -67,4 +67,4 @@ If you lose the secrets but still have the identity in your keychain, re-export 
 
 ## Quarantine
 
-Self-signing does not satisfy Gatekeeper for downloads. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+Self-signing does not satisfy Gatekeeper for downloads. Homebrew clears quarantine in cask `postflight` — see [HOMEBREW.md](HOMEBREW.md). Manual installs: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

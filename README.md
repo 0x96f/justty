@@ -22,6 +22,16 @@ Full list: [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Install
 
+**Homebrew (recommended):**
+
+```bash
+brew install --cask 0x96f/justty/justty
+```
+
+The cask clears Gatekeeper quarantine on install. Details: [docs/HOMEBREW.md](docs/HOMEBREW.md).
+
+**Manual:**
+
 1. Download `Justty-macos.zip` from the [latest release](https://github.com/0x96f/justty/releases/latest).
 2. Unzip it - you should get `Justty.app`.
 3. Move `Justty.app` somewhere lasting (for example `/Applications` or `~/Applications`).

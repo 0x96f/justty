@@ -20,6 +20,8 @@ codesign -dv --verbose=4 /path/to/Justty.app
 # expect Authority=Justty Self-Signed
 ```
 
+Homebrew installs clear quarantine automatically — see [HOMEBREW.md](HOMEBREW.md).
+
 See also the Self-signed builds section in the [README](../README.md) and [SIGNING.md](SIGNING.md).
 
 ## Ghostty packages fail to resolve / missing submodule
