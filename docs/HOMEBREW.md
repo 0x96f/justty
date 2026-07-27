@@ -4,8 +4,12 @@ Justty ships via the personal tap [`0x96f/homebrew-justty`](https://github.com/0
 
 ## Install
 
+Homebrew 6+ requires trusting third-party taps before install:
+
 ```bash
-brew install --cask 0x96f/justty/justty
+brew trust --tap 0x96f/justty
+brew tap 0x96f/justty
+brew install --cask justty
 ```
 
 The cask clears Gatekeeper quarantine in `postflight`, so brew users should not need the manual `xattr` step.
@@ -14,8 +18,8 @@ The cask clears Gatekeeper quarantine in `postflight`, so brew users should not 
 
 The [release workflow](../.github/workflows/release.yml) updates `Casks/justty.rb` (`version` + `sha256`) after each `v*` tag when this secret is set:
 
-| Secret | Purpose |
-| --- | --- |
+| Secret               | Purpose                                                                           |
+| -------------------- | --------------------------------------------------------------------------------- |
 | `HOMEBREW_TAP_TOKEN` | PAT (classic or fine-grained) with **contents: write** on `0x96f/homebrew-justty` |
 
 Create a fine-grained token scoped to that repo only, then:

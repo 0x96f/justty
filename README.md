@@ -25,7 +25,9 @@ Full list: [docs/FEATURES.md](docs/FEATURES.md).
 **Homebrew (recommended):**
 
 ```bash
-brew install --cask 0x96f/justty/justty
+brew trust --tap 0x96f/justty
+brew tap 0x96f/justty
+brew install --cask justty
 ```
 
 The cask clears Gatekeeper quarantine on install. Details: [docs/HOMEBREW.md](docs/HOMEBREW.md).
