@@ -29,6 +29,11 @@ struct TabBarView: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
             }
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+
+            // Leftover width is non-hit-testable so double-click / drag reach WindowDragRegion.
+            Spacer(minLength: 8)
 
             Button {
                 tabs.newTab()

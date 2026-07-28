@@ -18,6 +18,14 @@ struct WindowDragRegion: NSViewRepresentable {
 
 private final class WindowDragNSView: NSView {
     override var mouseDownCanMoveWindow: Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            window?.zoom(nil)
+            return
+        }
+        // Single-click drag is handled by mouseDownCanMoveWindow.
+    }
 }
 
 /// Ensures content draws under the traffic-light area with a transparent titlebar,
