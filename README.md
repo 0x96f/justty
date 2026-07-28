@@ -7,7 +7,7 @@
   <img src="images/screenshot.png" alt="JusTTY" width="640">
 </p>
 
-A simple native macOS terminal built with Swift and [libghostty](https://github.com/Lakr233/libghostty-spm). It’s intentionally minimal - meant for quick commands, not as a full-time replacement for your main terminal.
+A simple native macOS terminal built with Swift and [libghostty](https://github.com/Lakr233/libghostty-spm). Minimal be design - suited for everyday use, just not packed with the bells and whistles power users expect.
 
 ## Features
 
