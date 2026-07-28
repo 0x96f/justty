@@ -5,7 +5,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 ## Windows & tabs
 
 - **New window** - ⌘N opens another main window.
-- **Tab bar** - Titles, per-tab close, **+** (new tab), gear (Settings). Empty chrome is draggable (hidden title bar); double-click zooms the window.
+- **Tab bar** - Titles, per-tab close, **+** (new tab), gear (Settings). Overflowing tabs scroll with left/right arrows (and stay clear of the trailing buttons). Empty chrome is draggable (hidden title bar); double-click zooms the window.
 - **Shortcuts** - ⌘T new tab, ⌘W close tab, ⌘⇧] / ⌘⇧[ next / previous tab.
 - **Titles** - Tab titles follow the shell / program title from the terminal.
 - **Close with running command** - Closing a tab that has a foreground process prompts for confirmation.
