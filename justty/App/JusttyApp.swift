@@ -78,6 +78,12 @@ private struct JusttyCommands: Commands {
             }
             .keyboardShortcut("[", modifiers: [.command, .shift])
             .disabled(tabs == nil)
+
+            Divider()
+
+            Button("Reload Configuration") {
+                AppSettings.shared.reloadFromDisk()
+            }
         }
     }
 }

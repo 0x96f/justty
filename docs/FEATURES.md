@@ -21,7 +21,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 
 ## Settings
 
-Open with ⌘, or the tab-bar gear. Values persist in `UserDefaults` and refresh live sessions (theme, font, padding). Window size/position apply to **new** windows only.
+Open with ⌘, or the tab-bar gear. Values persist in `~/.config/justty/config.yml` (created with defaults on first launch). Changing Settings writes the file immediately; after editing the file by hand, use **File → Reload Configuration**. Window size/position apply to **new** windows only.
 
 | Section                | Controls                                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,6 +29,7 @@ Open with ⌘, or the tab-bar gear. Values persist in `UserDefaults` and refresh
 | **Font**               | Family (System or detected monospace), size 8–32 px (default 13), line height 0.8–2.0×, weight Regular / Medium / Semibold / Bold.                                  |
 | **Window**             | Padding 0–64 px; starting X×Y from the top-left of the main screen (clamped to the visible frame); size as character grid (cols 20–500, rows 5–200; default 80×24). |
 | **Keyboard Shortcuts** | Opens a read-only sheet (same list as below).                                                                                                                       |
+| **Configuration**      | **Open Configuration…** opens `config.yml` in the default text editor (Ghostty-style).                                                                              |
 
 ## Keyboard shortcuts
 
@@ -43,6 +44,7 @@ Source of truth: `justty/Settings/ShortcutsCatalog.swift` (also drives Ghostty t
 | Close Tab         | ⌘W   |
 | Show Next Tab     | ⌘⇧]  |
 | Show Previous Tab | ⌘⇧[  |
+| Reload Configuration | File menu |
 
 ### Terminal
 

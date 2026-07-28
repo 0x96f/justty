@@ -150,9 +150,15 @@ struct SettingsView: View {
                     showingShortcuts = true
                 }
             }
+
+            Section("Configuration") {
+                Button("Open Configuration…") {
+                    settings.openConfigFile()
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 440, height: 540)
+        .frame(width: 440, height: 580)
         .padding(8)
         .sheet(isPresented: $showingShortcuts) {
             ShortcutsView()

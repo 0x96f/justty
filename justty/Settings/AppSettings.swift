@@ -6,25 +6,18 @@
 import AppKit
 import Combine
 import Foundation
+import OSLog
 
 @MainActor
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
-    private let defaults: UserDefaults
+    private static let logger = Logger(subsystem: "dev.justty", category: "settings")
+    private static let defaultPersistDebounce: Duration = .milliseconds(250)
 
-    private enum Key {
-        static let theme = "theme"
-        static let fontFamily = "fontFamily"
-        static let fontSize = "fontSize"
-        static let fontWeight = "fontWeight"
-        static let lineHeight = "lineHeight"
-        static let terminalPadding = "terminalPadding"
-        static let windowOriginX = "windowOriginX"
-        static let windowOriginY = "windowOriginY"
-        static let windowColumns = "windowColumns"
-        static let windowRows = "windowRows"
-    }
+    private let configURL: URL
+    private let persistDebounce: Duration
+    private var persistTask: Task<Void, Never>?
 
     enum Defaults {
         static let lineHeight = 1.0
@@ -47,18 +40,16 @@ final class AppSettings: ObservableObject {
     @Published var theme: String {
         didSet {
             guard !isLoading else { return }
-            defaults.set(theme, forKey: Key.theme)
             Theme.reloadSelection(theme)
             applyAppAppearance()
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
     @Published var fontFamily: String {
         didSet {
             guard !isLoading else { return }
-            defaults.set(fontFamily, forKey: Key.fontFamily)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -70,16 +61,14 @@ final class AppSettings: ObservableObject {
                 fontSize = clamped
                 return
             }
-            defaults.set(fontSize, forKey: Key.fontSize)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
     @Published var fontWeight: FontWeightSetting {
         didSet {
             guard !isLoading else { return }
-            defaults.set(fontWeight.rawValue, forKey: Key.fontWeight)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -91,8 +80,7 @@ final class AppSettings: ObservableObject {
                 lineHeight = clamped
                 return
             }
-            defaults.set(lineHeight, forKey: Key.lineHeight)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -104,8 +92,7 @@ final class AppSettings: ObservableObject {
                 terminalPadding = clamped
                 return
             }
-            defaults.set(terminalPadding, forKey: Key.terminalPadding)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -117,8 +104,7 @@ final class AppSettings: ObservableObject {
                 windowOriginX = clamped
                 return
             }
-            defaults.set(windowOriginX, forKey: Key.windowOriginX)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -130,8 +116,7 @@ final class AppSettings: ObservableObject {
                 windowOriginY = clamped
                 return
             }
-            defaults.set(windowOriginY, forKey: Key.windowOriginY)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -143,8 +128,7 @@ final class AppSettings: ObservableObject {
                 windowColumns = clamped
                 return
             }
-            defaults.set(windowColumns, forKey: Key.windowColumns)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
@@ -156,71 +140,72 @@ final class AppSettings: ObservableObject {
                 windowRows = clamped
                 return
             }
-            defaults.set(windowRows, forKey: Key.windowRows)
-            NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+            persistAndNotify()
         }
     }
 
-    /// True while seeding properties from UserDefaults so didSet side effects
+    /// True while seeding properties from disk so didSet side effects
     /// (including `NSApp`, which is still nil during `App.init`) do not run.
     private var isLoading = true
 
     convenience init() {
-        self.init(defaults: .standard)
+        self.init(configURL: JusttyConfigStore.defaultURL)
     }
 
-    init(defaults: UserDefaults) {
-        self.defaults = defaults
+    init(
+        configURL: URL,
+        persistDebounce: Duration = AppSettings.defaultPersistDebounce
+    ) {
+        self.configURL = configURL
+        self.persistDebounce = persistDebounce
 
-        theme = Self.knownTheme(defaults.string(forKey: Key.theme))
-            ?? Theme.defaultDarkThemeName
-        fontFamily = defaults.string(forKey: Key.fontFamily) ?? ""
-        let storedSize = defaults.double(forKey: Key.fontSize)
-        fontSize = storedSize == 0
-            ? TerminalFont.defaultSize
-            : Self.clamp(storedSize, to: Limits.fontSize)
-        let weightRaw = defaults.string(forKey: Key.fontWeight) ?? FontWeightSetting.regular.rawValue
-        fontWeight = FontWeightSetting(rawValue: weightRaw) ?? .regular
-        lineHeight = Self.double(
-            defaults,
-            key: Key.lineHeight,
-            default: Defaults.lineHeight,
-            limits: Limits.lineHeight
-        )
+        // Placeholders so `apply` can run from init; immediately overwritten.
+        theme = Theme.defaultDarkThemeName
+        fontFamily = ""
+        fontSize = Double(TerminalFont.defaultSize)
+        fontWeight = .regular
+        lineHeight = Defaults.lineHeight
+        terminalPadding = Defaults.terminalPadding
+        windowOriginX = Defaults.windowOriginX
+        windowOriginY = Defaults.windowOriginY
+        windowColumns = Defaults.windowColumns
+        windowRows = Defaults.windowRows
 
-        terminalPadding = Self.int(
-            defaults,
-            key: Key.terminalPadding,
-            default: Defaults.terminalPadding,
-            limits: Limits.terminalPadding
-        )
-        windowOriginX = Self.int(
-            defaults,
-            key: Key.windowOriginX,
-            default: Defaults.windowOriginX,
-            limits: Limits.windowOrigin
-        )
-        windowOriginY = Self.int(
-            defaults,
-            key: Key.windowOriginY,
-            default: Defaults.windowOriginY,
-            limits: Limits.windowOrigin
-        )
-        windowColumns = Self.int(
-            defaults,
-            key: Key.windowColumns,
-            default: Defaults.windowColumns,
-            limits: Limits.windowColumns
-        )
-        windowRows = Self.int(
-            defaults,
-            key: Key.windowRows,
-            default: Defaults.windowRows,
-            limits: Limits.windowRows
-        )
-
+        apply(Self.loadOrCreate(at: configURL))
         Theme.reloadSelection(theme)
         isLoading = false
+        observeAppTermination()
+    }
+
+    /// Re-read `config.yml` and apply (File → Reload Configuration).
+    func reloadFromDisk() {
+        let config: JusttyConfigFile
+        do {
+            config = try JusttyConfigStore.load(from: configURL)
+        } catch {
+            Self.logger.error("Failed to reload configuration: \(error.localizedDescription, privacy: .public)")
+            presentReloadFailure(error)
+            return
+        }
+
+        isLoading = true
+        apply(config)
+        isLoading = false
+
+        Theme.reloadSelection(theme)
+        applyAppAppearance()
+        NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+    }
+
+    /// Ensure the config file exists, then open it in a text editor (Ghostty-style).
+    func openConfigFile() {
+        do {
+            _ = try JusttyConfigStore.ensureExists(at: configURL, seeding: makeConfigFile())
+        } catch {
+            Self.logger.error("Failed to ensure config file: \(error.localizedDescription, privacy: .public)")
+            // Still try to open; editor may create or show an error.
+        }
+        JusttyConfigStore.openInEditor(url: configURL)
     }
 
     /// Apply chrome light/dark from the selected theme once AppKit exists.
@@ -228,6 +213,199 @@ final class AppSettings: ObservableObject {
         NSApp?.appearance = NSAppearance(
             named: Theme.isDark ? .darkAqua : .aqua
         )
+    }
+
+    /// Cancel a pending debounced write and persist immediately (tests / quit).
+    func flushPendingPersist() {
+        persistTask?.cancel()
+        persistTask = nil
+        writeConfigToDisk()
+    }
+
+    private func apply(_ config: JusttyConfigFile) {
+        theme = Self.resolvedTheme(config.theme)
+        fontFamily = config.font.family
+        fontSize = Self.resolvedFontSize(Double(config.font.size))
+        fontWeight = FontWeightSetting(rawValue: config.font.weight) ?? .regular
+        lineHeight = Self.clamp(config.font.lineHeight, to: Limits.lineHeight)
+        terminalPadding = Self.clamp(config.window.padding, to: Limits.terminalPadding)
+        windowOriginX = Self.clamp(config.window.originX, to: Limits.windowOrigin)
+        windowOriginY = Self.clamp(config.window.originY, to: Limits.windowOrigin)
+        windowColumns = Self.clamp(config.window.columns, to: Limits.windowColumns)
+        windowRows = Self.clamp(config.window.rows, to: Limits.windowRows)
+    }
+
+    private func persistAndNotify() {
+        NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
+        schedulePersist()
+    }
+
+    private func schedulePersist() {
+        persistTask?.cancel()
+        if persistDebounce == .zero {
+            writeConfigToDisk()
+            return
+        }
+        let delay = persistDebounce
+        persistTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: delay)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.writeConfigToDisk()
+        }
+    }
+
+    private func writeConfigToDisk() {
+        do {
+            try JusttyConfigStore.save(makeConfigFile(), to: configURL)
+        } catch {
+            Self.logger.error("Failed to save configuration: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func observeAppTermination() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.flushPendingPersist()
+            }
+        }
+    }
+
+    private func presentReloadFailure(_ error: Error) {
+        // Sheet only — never `runModal`, so XCTest / no-window cases just log.
+        guard let window = NSApp?.keyWindow ?? NSApp?.mainWindow else { return }
+
+        let alert = NSAlert()
+        alert.messageText = "Couldn’t Reload Configuration"
+        alert.informativeText = error.localizedDescription
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.beginSheetModal(for: window)
+    }
+
+    private func makeConfigFile() -> JusttyConfigFile {
+        JusttyConfigFile(
+            theme: theme,
+            font: .init(
+                family: fontFamily,
+                size: Int(fontSize.rounded()),
+                weight: fontWeight.rawValue,
+                lineHeight: lineHeight
+            ),
+            window: .init(
+                padding: terminalPadding,
+                originX: windowOriginX,
+                originY: windowOriginY,
+                columns: windowColumns,
+                rows: windowRows
+            )
+        )
+    }
+
+    private static func loadOrCreate(at url: URL) -> JusttyConfigFile {
+        if FileManager.default.fileExists(atPath: url.path) {
+            do {
+                return try JusttyConfigStore.load(from: url)
+            } catch {
+                logger.error("Failed to load configuration; using defaults: \(error.localizedDescription, privacy: .public)")
+                return .default
+            }
+        }
+
+        // One-shot migrate from UserDefaults only for the real config path
+        // so tests with temp files get pure defaults.
+        let seeding: JusttyConfigFile
+        if url.standardizedFileURL == JusttyConfigStore.defaultURL.standardizedFileURL {
+            seeding = migrateFromUserDefaults() ?? .default
+        } else {
+            seeding = .default
+        }
+        do {
+            try JusttyConfigStore.save(seeding, to: url)
+        } catch {
+            logger.error("Failed to create configuration file: \(error.localizedDescription, privacy: .public)")
+        }
+        return seeding
+    }
+
+    /// Seeds a first YAML file from legacy UserDefaults keys when present.
+    private static func migrateFromUserDefaults() -> JusttyConfigFile? {
+        let defaults = UserDefaults.standard
+        let legacyKeys = [
+            "theme", "fontFamily", "fontSize", "fontWeight", "lineHeight",
+            "terminalPadding", "windowOriginX", "windowOriginY",
+            "windowColumns", "windowRows",
+        ]
+        let hasAny = legacyKeys.contains { defaults.object(forKey: $0) != nil }
+        guard hasAny else { return nil }
+
+        var config = JusttyConfigFile.default
+        if let theme = defaults.string(forKey: "theme") {
+            config.theme = resolvedTheme(theme)
+        }
+        if let family = defaults.string(forKey: "fontFamily") {
+            config.font.family = family
+        }
+        let storedSize = defaults.double(forKey: "fontSize")
+        if defaults.object(forKey: "fontSize") != nil {
+            config.font.size = Int(resolvedFontSize(storedSize).rounded())
+        }
+        if let weight = defaults.string(forKey: "fontWeight") {
+            config.font.weight = FontWeightSetting(rawValue: weight)?.rawValue
+                ?? FontWeightSetting.regular.rawValue
+        }
+        if defaults.object(forKey: "lineHeight") != nil {
+            config.font.lineHeight = clamp(
+                defaults.double(forKey: "lineHeight"),
+                to: Limits.lineHeight
+            )
+        }
+        if defaults.object(forKey: "terminalPadding") != nil {
+            config.window.padding = clamp(
+                defaults.integer(forKey: "terminalPadding"),
+                to: Limits.terminalPadding
+            )
+        }
+        if defaults.object(forKey: "windowOriginX") != nil {
+            config.window.originX = clamp(
+                defaults.integer(forKey: "windowOriginX"),
+                to: Limits.windowOrigin
+            )
+        }
+        if defaults.object(forKey: "windowOriginY") != nil {
+            config.window.originY = clamp(
+                defaults.integer(forKey: "windowOriginY"),
+                to: Limits.windowOrigin
+            )
+        }
+        if defaults.object(forKey: "windowColumns") != nil {
+            config.window.columns = clamp(
+                defaults.integer(forKey: "windowColumns"),
+                to: Limits.windowColumns
+            )
+        }
+        if defaults.object(forKey: "windowRows") != nil {
+            config.window.rows = clamp(
+                defaults.integer(forKey: "windowRows"),
+                to: Limits.windowRows
+            )
+        }
+        return config
+    }
+
+    private static func resolvedTheme(_ name: String) -> String {
+        knownTheme(name) ?? Theme.defaultDarkThemeName
+    }
+
+    private static func resolvedFontSize(_ size: Double) -> Double {
+        size == 0 ? TerminalFont.defaultSize : clamp(size, to: Limits.fontSize)
     }
 
     private static func knownTheme(_ name: String?) -> String? {
@@ -243,32 +421,6 @@ final class AppSettings: ObservableObject {
 
     private static func clamp(_ value: Double, to range: ClosedRange<Double>) -> Double {
         min(max(value, range.lowerBound), range.upperBound)
-    }
-
-    /// Reads an Int from UserDefaults. Missing keys use `default`; `0` is a
-    /// valid stored value (unlike font size, which uses 0 as “unset”).
-    private static func int(
-        _ defaults: UserDefaults,
-        key: String,
-        default defaultValue: Int,
-        limits: ClosedRange<Int>
-    ) -> Int {
-        guard defaults.object(forKey: key) != nil else {
-            return defaultValue
-        }
-        return clamp(defaults.integer(forKey: key), to: limits)
-    }
-
-    private static func double(
-        _ defaults: UserDefaults,
-        key: String,
-        default defaultValue: Double,
-        limits: ClosedRange<Double>
-    ) -> Double {
-        guard defaults.object(forKey: key) != nil else {
-            return defaultValue
-        }
-        return clamp(defaults.double(forKey: key), to: limits)
     }
 }
 
