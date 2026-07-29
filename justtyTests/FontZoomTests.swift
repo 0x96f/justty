@@ -36,4 +36,12 @@ struct FontZoomTests {
         #expect(FontZoom.clamp(1) == AppSettings.Limits.fontSize.lowerBound)
         #expect(FontZoom.clamp(100) == AppSettings.Limits.fontSize.upperBound)
     }
+
+    @Test func clearingOverrideReturnsToBase() {
+        // Settings refresh clears override; effective size is the new base.
+        let zoomed = FontZoom.increased(base: 13, override: nil)
+        #expect(FontZoom.effective(base: 16, override: nil) == 16)
+        #expect(zoomed == 14)
+        #expect(FontZoom.effective(base: 16, override: zoomed) == 14)
+    }
 }

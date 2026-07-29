@@ -40,4 +40,20 @@ struct TerminalFindTests {
         #expect(!tabs.isFindPresented)
         #expect(tabs.findQuery.isEmpty)
     }
+
+    @Test @MainActor func selectNextWhileFindClosedLeavesFindIdle() {
+        let tabs = TabManager(createInitialTab: false)
+        tabs.selectNext()
+        #expect(!tabs.isFindPresented)
+        #expect(tabs.findQuery.isEmpty)
+    }
+
+    @Test @MainActor func selectNextDismissesOpenFind() {
+        let tabs = TabManager(createInitialTab: false)
+        tabs.showFind()
+        tabs.updateFindQuery("bar")
+        tabs.selectNext()
+        #expect(!tabs.isFindPresented)
+        #expect(tabs.findQuery.isEmpty)
+    }
 }

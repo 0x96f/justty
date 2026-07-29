@@ -132,7 +132,12 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     }
 
     /// Reconfigures libghostty when theme or font settings change.
-    func applyAppearance() {
+    /// Pass `clearFontZoom: true` on Settings refresh so tabs adopt the new
+    /// Settings size instead of keeping a temporary ⌘+/− override.
+    func applyAppearance(clearFontZoom: Bool = false) {
+        if clearFontZoom {
+            fontSizeOverride = nil
+        }
         _ = controller.setTerminalConfiguration(
             JusttyTerminalConfig.terminalConfiguration(
                 command: launchCommand,
@@ -165,6 +170,22 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         applyAppearance()
     }
 
+    func performFindSearch(_ query: String) {
+        _ = terminalView.performBindingAction(TerminalFind.searchAction(for: query))
+    }
+
+    func performFindNext() {
+        _ = terminalView.performBindingAction(TerminalFind.navigateNext)
+    }
+
+    func performFindPrevious() {
+        _ = terminalView.performBindingAction(TerminalFind.navigatePrevious)
+    }
+
+    func endFindSearch() {
+        _ = terminalView.performBindingAction(TerminalFind.end)
+    }
+
     /// Tears down the surface when the host is already closing the tab.
     /// Does not invoke `onExited` - that callback is only for spontaneous
     /// shell/surface exit, otherwise TabManager.close would re-enter and
@@ -177,17 +198,8 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     }
 
     private func refreshShellPid() {
-        let foreground = terminalView.foregroundPid
-        let name = foreground.flatMap(Self.processName(for:))
-        let result = Self.hasRunningCommand(
-            foregroundPid: foreground,
-            foregroundName: name,
-            shellName: shellName,
-            shellPid: shellPid
-        )
-        if let locked = result.lockedShellPid {
-            shellPid = locked
-        }
+        // hasRunningCommand locks shellPid when the foreground is the login shell.
+        _ = hasRunningCommand
     }
 
     private static func processName(for pid: pid_t) -> String? {

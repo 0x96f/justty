@@ -5,7 +5,8 @@
 
 import Foundation
 
-/// Per-tab temporary font size relative to Settings; never writes config.yml.
+/// Per-tab temporary font size override; cleared when Settings refresh.
+/// Never writes config.yml.
 enum FontZoom {
     static let step = 1.0
 

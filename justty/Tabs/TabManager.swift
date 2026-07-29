@@ -6,14 +6,13 @@
 import AppKit
 import Combine
 import Foundation
-import GhosttyTerminal
 
 @MainActor
 final class TabManager: ObservableObject {
     @Published private(set) var sessions: [TerminalSession] = []
     @Published private(set) var selectedID: TerminalSession.ID?
     @Published private(set) var isFindPresented = false
-    @Published var findQuery = ""
+    @Published private(set) var findQuery = ""
     /// Bumped when Find should re-focus the query field (e.g. ⌘F while already open).
     @Published private(set) var findFocusToken = 0
 
@@ -54,8 +53,7 @@ final class TabManager: ObservableObject {
 
     /// Opens a tab. When `inheritingCwd` is true, launches in the selected tab's cwd.
     func newTab(inheritingCwd: Bool = true) {
-        endSearchOnSelected()
-        hideFind(endSearch: false)
+        dismissFindIfNeeded()
         let cwd = Self.workingDirectoryForNewTab(
             inheritingCwd: inheritingCwd,
             selected: selectedSession?.resolvedWorkingDirectory
@@ -83,8 +81,7 @@ final class TabManager: ObservableObject {
 
     func select(_ id: TerminalSession.ID) {
         if id != selectedID {
-            endSearchOnSelected()
-            hideFind(endSearch: false)
+            dismissFindIfNeeded()
         }
         roster.select(id)
         selectedID = roster.selectedID
@@ -112,8 +109,7 @@ final class TabManager: ObservableObject {
         }
 
         if session.id == selectedID {
-            endSearch(on: session)
-            hideFind(endSearch: false)
+            dismissFindIfNeeded()
         }
 
         // Capture before teardown: after terminate the view may leave the hierarchy,
@@ -145,22 +141,20 @@ final class TabManager: ObservableObject {
     }
 
     func selectNext() {
-        endSearchOnSelected()
-        hideFind(endSearch: false)
+        dismissFindIfNeeded()
         roster.selectNext()
         selectedID = roster.selectedID
     }
 
     func selectPrevious() {
-        endSearchOnSelected()
-        hideFind(endSearch: false)
+        dismissFindIfNeeded()
         roster.selectPrevious()
         selectedID = roster.selectedID
     }
 
     func refreshAppearance() {
         for session in sessions {
-            session.applyAppearance()
+            session.applyAppearance(clearFontZoom: true)
         }
     }
 
@@ -199,28 +193,27 @@ final class TabManager: ObservableObject {
 
     func findNext() {
         guard isFindPresented, !findQuery.isEmpty else { return }
-        _ = selectedSession?.terminalView.performBindingAction(TerminalFind.navigateNext)
+        selectedSession?.performFindNext()
     }
 
     func findPrevious() {
         guard isFindPresented, !findQuery.isEmpty else { return }
-        _ = selectedSession?.terminalView.performBindingAction(TerminalFind.navigatePrevious)
+        selectedSession?.performFindPrevious()
+    }
+
+    /// Ends Ghostty search and closes the find bar only when find is open.
+    private func dismissFindIfNeeded() {
+        guard isFindPresented else { return }
+        hideFind(endSearch: true)
     }
 
     private func applyFindQuery() {
         guard isFindPresented, let session = selectedSession else { return }
-        _ = session.terminalView.performBindingAction(
-            TerminalFind.searchAction(for: findQuery)
-        )
+        session.performFindSearch(findQuery)
     }
 
     private func endSearchOnSelected() {
-        guard let session = selectedSession else { return }
-        endSearch(on: session)
-    }
-
-    private func endSearch(on session: TerminalSession) {
-        _ = session.terminalView.performBindingAction(TerminalFind.end)
+        selectedSession?.endFindSearch()
     }
 
     private static func defaultConfirmClose(
