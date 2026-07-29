@@ -84,6 +84,7 @@ private struct JusttyCommands: Commands {
             Button("Reload Configuration") {
                 AppSettings.shared.reloadFromDisk()
             }
+            .keyboardShortcut(",", modifiers: [.command, .shift])
         }
 
         CommandGroup(after: .pasteboard) {

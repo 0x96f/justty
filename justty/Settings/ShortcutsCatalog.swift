@@ -36,6 +36,12 @@ enum ShortcutsCatalog {
                 Item(id: "larger", title: "Larger", keys: "⌘+", ghosttyKeybind: nil),
                 Item(id: "smaller", title: "Smaller", keys: "⌘−", ghosttyKeybind: nil),
                 Item(id: "actual-size", title: "Actual Size", keys: "⌘0", ghosttyKeybind: nil),
+                Item(
+                    id: "reload-config",
+                    title: "Reload Configuration",
+                    keys: "⌘⇧,",
+                    ghosttyKeybind: nil
+                ),
             ]
         ),
         Section(

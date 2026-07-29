@@ -24,7 +24,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 
 ## Settings
 
-Open with ⌘, or the tab-bar gear. Values persist in `~/.config/justty/config.yml` (created with defaults on first launch). Changing Settings writes the file immediately; after editing the file by hand, use **File → Reload Configuration**. Window size/position apply to **new** windows only.
+Open with ⌘, or the tab-bar gear. Values persist in `~/.config/justty/config.yml` (created with defaults on first launch). Changing Settings writes the file immediately; after editing the file by hand, use **File → Reload Configuration** (⌘⇧,). Window size/position apply to **new** windows only.
 
 | Section                | Controls                                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ Source of truth: `justty/Settings/ShortcutsCatalog.swift` (also drives Ghostty t
 | Larger            | ⌘+   |
 | Smaller           | ⌘−   |
 | Actual Size       | ⌘0   |
-| Reload Configuration | File menu |
+| Reload Configuration | ⌘⇧, |
 
 ### Terminal
 
