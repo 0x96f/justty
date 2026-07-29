@@ -22,11 +22,20 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     private let controller: TerminalController
     private let launchCommand: String
     private let shellName: String
+    /// Temporary per-tab size; nil means use Settings. Never persisted.
+    private var fontSizeOverride: Double?
     /// PTY foreground pid while idle at the shell prompt; used to detect a
     /// running foreground command without shell integration.
     private var shellPid: pid_t?
     private var isTerminating = false
     var onExited: ((TerminalSession) -> Void)?
+
+    var effectiveFontSize: Double {
+        FontZoom.effective(
+            base: AppSettings.shared.fontSize,
+            override: fontSizeOverride
+        )
+    }
 
     /// True when the PTY foreground process is not the login shell.
     var hasRunningCommand: Bool {
@@ -110,10 +119,35 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     /// Reconfigures libghostty when theme or font settings change.
     func applyAppearance() {
         _ = controller.setTerminalConfiguration(
-            JusttyTerminalConfig.terminalConfiguration(command: launchCommand)
+            JusttyTerminalConfig.terminalConfiguration(
+                command: launchCommand,
+                fontSize: effectiveFontSize
+            )
         )
         _ = controller.setTheme(JusttyTerminalConfig.ghosttyTheme())
         controller.setColorScheme(Theme.isDark ? .dark : .light)
+    }
+
+    func increaseFontSize() {
+        fontSizeOverride = FontZoom.increased(
+            base: AppSettings.shared.fontSize,
+            override: fontSizeOverride
+        )
+        applyAppearance()
+    }
+
+    func decreaseFontSize() {
+        fontSizeOverride = FontZoom.decreased(
+            base: AppSettings.shared.fontSize,
+            override: fontSizeOverride
+        )
+        applyAppearance()
+    }
+
+    func resetFontSize() {
+        guard fontSizeOverride != nil else { return }
+        fontSizeOverride = nil
+        applyAppearance()
     }
 
     /// Tears down the surface when the host is already closing the tab.

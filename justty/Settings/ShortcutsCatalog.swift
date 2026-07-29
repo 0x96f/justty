@@ -33,6 +33,9 @@ enum ShortcutsCatalog {
                 Item(id: "next-tab", title: "Show Next Tab", keys: "⌘⇧]", ghosttyKeybind: nil),
                 Item(id: "prev-tab", title: "Show Previous Tab", keys: "⌘⇧[", ghosttyKeybind: nil),
                 Item(id: "find", title: "Find", keys: "⌘F", ghosttyKeybind: nil),
+                Item(id: "larger", title: "Larger", keys: "⌘+", ghosttyKeybind: nil),
+                Item(id: "smaller", title: "Smaller", keys: "⌘−", ghosttyKeybind: nil),
+                Item(id: "actual-size", title: "Actual Size", keys: "⌘0", ghosttyKeybind: nil),
             ]
         ),
         Section(

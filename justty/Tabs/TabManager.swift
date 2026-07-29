@@ -147,6 +147,18 @@ final class TabManager: ObservableObject {
         }
     }
 
+    func increaseFontSize() {
+        selectedSession?.increaseFontSize()
+    }
+
+    func decreaseFontSize() {
+        selectedSession?.decreaseFontSize()
+    }
+
+    func resetFontSize() {
+        selectedSession?.resetFontSize()
+    }
+
     // MARK: - Find
 
     func showFind() {

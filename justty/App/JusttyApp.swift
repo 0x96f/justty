@@ -93,5 +93,25 @@ private struct JusttyCommands: Commands {
             .keyboardShortcut("f", modifiers: .command)
             .disabled(tabs == nil)
         }
+
+        CommandMenu("View") {
+            Button("Larger") {
+                tabs?.increaseFontSize()
+            }
+            .keyboardShortcut("=", modifiers: .command)
+            .disabled(tabs == nil)
+
+            Button("Smaller") {
+                tabs?.decreaseFontSize()
+            }
+            .keyboardShortcut("-", modifiers: .command)
+            .disabled(tabs == nil)
+
+            Button("Actual Size") {
+                tabs?.resetFontSize()
+            }
+            .keyboardShortcut("0", modifiers: .command)
+            .disabled(tabs == nil)
+        }
     }
 }

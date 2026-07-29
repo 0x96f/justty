@@ -12,13 +12,17 @@ import GhosttyTheme
 /// libghostty renders and runs the PTY; the host decides shell, env, keybinds,
 /// and which Ghostty defaults to clear so app menus keep Cmd-T / Cmd-W.
 enum JusttyTerminalConfig {
-    static func terminalConfiguration(command: String) -> TerminalConfiguration {
+    static func terminalConfiguration(
+        command: String,
+        fontSize: Double? = nil
+    ) -> TerminalConfiguration {
         let settings = AppSettings.shared
         let family = settings.fontFamily.isEmpty
             ? TerminalFont.resolvedDefaultFamily : settings.fontFamily
+        let resolvedSize = FontZoom.clamp(fontSize ?? settings.fontSize)
         return TerminalConfiguration { builder in
             builder.withFontFamily(family)
-            builder.withFontSize(Float(settings.fontSize))
+            builder.withFontSize(Float(resolvedSize))
             builder.withFontThicken(false)
             builder.withCustom("font-style", settings.fontWeight.fontStyle)
             builder.withCustom(
