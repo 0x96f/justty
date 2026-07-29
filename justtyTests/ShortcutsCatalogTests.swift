@@ -36,4 +36,20 @@ struct ShortcutsCatalogTests {
         let binds = ShortcutsCatalog.hostKeybinds
         #expect(Set(binds).count == binds.count)
     }
+
+    @Test func scrollKeybindsAreInstalled() throws {
+        let terminal = try #require(
+            ShortcutsCatalog.sections.first { $0.id == "terminal" }
+        )
+        let expected = [
+            "scroll-top": "super+home=scroll_to_top",
+            "scroll-bottom": "super+end=scroll_to_bottom",
+            "scroll-page-up": "super+page_up=scroll_page_up",
+            "scroll-page-down": "super+page_down=scroll_page_down",
+        ]
+        for (id, bind) in expected {
+            let item = try #require(terminal.items.first { $0.id == id })
+            #expect(item.ghosttyKeybind == bind)
+        }
+    }
 }

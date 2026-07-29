@@ -84,6 +84,30 @@ enum ShortcutsCatalog {
                     keys: "⌘V",
                     ghosttyKeybind: "super+v=paste_from_clipboard"
                 ),
+                Item(
+                    id: "scroll-top",
+                    title: "Scroll to Top",
+                    keys: "⌘↖",
+                    ghosttyKeybind: "super+home=scroll_to_top"
+                ),
+                Item(
+                    id: "scroll-bottom",
+                    title: "Scroll to Bottom",
+                    keys: "⌘↘",
+                    ghosttyKeybind: "super+end=scroll_to_bottom"
+                ),
+                Item(
+                    id: "scroll-page-up",
+                    title: "Scroll Page Up",
+                    keys: "⌘⇞",
+                    ghosttyKeybind: "super+page_up=scroll_page_up"
+                ),
+                Item(
+                    id: "scroll-page-down",
+                    title: "Scroll Page Down",
+                    keys: "⌘⇟",
+                    ghosttyKeybind: "super+page_down=scroll_page_down"
+                ),
             ]
         ),
     ]
