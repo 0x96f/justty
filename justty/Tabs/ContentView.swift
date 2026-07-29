@@ -12,10 +12,16 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabBarView(tabs: tabs)
+            if tabs.isFindPresented {
+                FindBarView(tabs: tabs)
+            }
             ZStack {
                 if let session = tabs.selectedSession {
-                    TerminalHostView(session: session, isFocused: true)
-                        .id(session.id)
+                    TerminalHostView(
+                        session: session,
+                        isFocused: !tabs.isFindPresented
+                    )
+                    .id(session.id)
                 }
                 TerminalParkingView(sessions: tabs.parkedSessions)
                     .frame(width: 0, height: 0)

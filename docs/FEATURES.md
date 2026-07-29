@@ -17,6 +17,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 - **Rendering** - Metal surface from libghostty.
 - **Bell** - System beep; dock bounce / attention when the app is inactive.
 - **URLs** - Terminal URL requests open in the default browser.
+- **Find** - ⌘F opens a thin find bar; matches are highlighted in scrollback via Ghostty search. Next/previous from the bar; Esc closes.
 - **Theme chrome** - Window / tab bar background and app appearance follow the selected color theme.
 
 ## Settings
@@ -44,6 +45,7 @@ Source of truth: `justty/Settings/ShortcutsCatalog.swift` (also drives Ghostty t
 | Close Tab         | ⌘W   |
 | Show Next Tab     | ⌘⇧]  |
 | Show Previous Tab | ⌘⇧[  |
+| Find              | ⌘F   |
 | Reload Configuration | File menu |
 
 ### Terminal

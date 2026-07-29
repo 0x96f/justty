@@ -6,11 +6,16 @@
 import AppKit
 import Combine
 import Foundation
+import GhosttyTerminal
 
 @MainActor
 final class TabManager: ObservableObject {
     @Published private(set) var sessions: [TerminalSession] = []
     @Published private(set) var selectedID: TerminalSession.ID?
+    @Published private(set) var isFindPresented = false
+    @Published var findQuery = ""
+    /// Bumped when Find should re-focus the query field (e.g. ⌘F while already open).
+    @Published private(set) var findFocusToken = 0
 
     var selectedSession: TerminalSession? {
         sessions.first { $0.id == selectedID }
@@ -48,6 +53,8 @@ final class TabManager: ObservableObject {
     }
 
     func newTab() {
+        endSearchOnSelected()
+        hideFind(endSearch: false)
         let session = makeSession()
         session.onExited = { [weak self] exited in
             self?.close(exited, fromShellExit: true)
@@ -58,6 +65,10 @@ final class TabManager: ObservableObject {
     }
 
     func select(_ id: TerminalSession.ID) {
+        if id != selectedID {
+            endSearchOnSelected()
+            hideFind(endSearch: false)
+        }
         roster.select(id)
         selectedID = roster.selectedID
     }
@@ -81,6 +92,11 @@ final class TabManager: ObservableObject {
 
         guard sessions.contains(where: { $0.id == session.id }) else {
             return
+        }
+
+        if session.id == selectedID {
+            endSearch(on: session)
+            hideFind(endSearch: false)
         }
 
         // Capture before teardown: after terminate the view may leave the hierarchy,
@@ -112,11 +128,15 @@ final class TabManager: ObservableObject {
     }
 
     func selectNext() {
+        endSearchOnSelected()
+        hideFind(endSearch: false)
         roster.selectNext()
         selectedID = roster.selectedID
     }
 
     func selectPrevious() {
+        endSearchOnSelected()
+        hideFind(endSearch: false)
         roster.selectPrevious()
         selectedID = roster.selectedID
     }
@@ -125,6 +145,53 @@ final class TabManager: ObservableObject {
         for session in sessions {
             session.applyAppearance()
         }
+    }
+
+    // MARK: - Find
+
+    func showFind() {
+        isFindPresented = true
+        findFocusToken &+= 1
+        applyFindQuery()
+    }
+
+    func hideFind(endSearch: Bool = true) {
+        if endSearch {
+            endSearchOnSelected()
+        }
+        isFindPresented = false
+        findQuery = ""
+    }
+
+    func updateFindQuery(_ query: String) {
+        findQuery = query
+        applyFindQuery()
+    }
+
+    func findNext() {
+        guard isFindPresented, !findQuery.isEmpty else { return }
+        _ = selectedSession?.terminalView.performBindingAction(TerminalFind.navigateNext)
+    }
+
+    func findPrevious() {
+        guard isFindPresented, !findQuery.isEmpty else { return }
+        _ = selectedSession?.terminalView.performBindingAction(TerminalFind.navigatePrevious)
+    }
+
+    private func applyFindQuery() {
+        guard isFindPresented, let session = selectedSession else { return }
+        _ = session.terminalView.performBindingAction(
+            TerminalFind.searchAction(for: findQuery)
+        )
+    }
+
+    private func endSearchOnSelected() {
+        guard let session = selectedSession else { return }
+        endSearch(on: session)
+    }
+
+    private func endSearch(on session: TerminalSession) {
+        _ = session.terminalView.performBindingAction(TerminalFind.end)
     }
 
     private static func defaultConfirmClose(

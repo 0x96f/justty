@@ -13,7 +13,9 @@ struct ShortcutsCatalogTests {
 
     @Test func menuOnlyShortcutsHaveNoGhosttyKeybind() throws {
         let items = ShortcutsCatalog.sections.flatMap(\.items)
-        let menuOnlyIDs = ["new-window", "new-tab", "close-tab", "next-tab", "prev-tab"]
+        let menuOnlyIDs = [
+            "new-window", "new-tab", "close-tab", "next-tab", "prev-tab", "find",
+        ]
         for id in menuOnlyIDs {
             let item = try #require(items.first { $0.id == id })
             #expect(item.ghosttyKeybind == nil)

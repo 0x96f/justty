@@ -85,5 +85,13 @@ private struct JusttyCommands: Commands {
                 AppSettings.shared.reloadFromDisk()
             }
         }
+
+        CommandGroup(after: .pasteboard) {
+            Button("Find…") {
+                tabs?.showFind()
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .disabled(tabs == nil)
+        }
     }
 }
