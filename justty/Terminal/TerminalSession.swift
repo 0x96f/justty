@@ -24,6 +24,8 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     private let shellName: String
     /// Temporary per-tab size; nil means use Settings. Never persisted.
     private var fontSizeOverride: Double?
+    /// Last OSC 7 path from the surface when the shell emits it.
+    private var reportedWorkingDirectory: String?
     /// PTY foreground pid while idle at the shell prompt; used to detect a
     /// running foreground command without shell integration.
     private var shellPid: pid_t?
@@ -34,6 +36,16 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         FontZoom.effective(
             base: AppSettings.shared.fontSize,
             override: fontSizeOverride
+        )
+    }
+
+    /// Directory for a sibling tab: OSC 7 if usable, else shell/foreground cwd, else home.
+    var resolvedWorkingDirectory: String {
+        refreshShellPid()
+        return ProcessWorkingDirectory.resolve(
+            reportedPath: reportedWorkingDirectory,
+            shellPid: shellPid,
+            foregroundPid: terminalView.foregroundPid
         )
     }
 
@@ -80,10 +92,13 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         return (isBusy, nil)
     }
 
-    override init() {
+    init(workingDirectory: String = NSHomeDirectory()) {
         let shellPath = JusttyTerminalConfig.loginShell()
         let launchCommand = JusttyTerminalConfig.makeLaunchCommand(shellPath: shellPath)
         let shellName = (shellPath as NSString).lastPathComponent
+        let launchCwd = ProcessWorkingDirectory.isUsableDirectory(workingDirectory)
+            ? workingDirectory
+            : NSHomeDirectory()
 
         self.launchCommand = launchCommand
         self.shellName = shellName
@@ -109,7 +124,7 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         terminalView.delegate = self
         terminalView.configuration = TerminalSurfaceOptions(
             backend: .exec,
-            workingDirectory: NSHomeDirectory(),
+            workingDirectory: launchCwd,
             envVars: JusttyTerminalConfig.surfaceEnvironment()
         )
         terminalView.controller = controller
@@ -161,6 +176,20 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         terminalView.controller = nil
     }
 
+    private func refreshShellPid() {
+        let foreground = terminalView.foregroundPid
+        let name = foreground.flatMap(Self.processName(for:))
+        let result = Self.hasRunningCommand(
+            foregroundPid: foreground,
+            foregroundName: name,
+            shellName: shellName,
+            shellPid: shellPid
+        )
+        if let locked = result.lockedShellPid {
+            shellPid = locked
+        }
+    }
+
     private static func processName(for pid: pid_t) -> String? {
         var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
         let length = buffer.withUnsafeMutableBufferPointer { ptr in
@@ -202,5 +231,12 @@ extension TerminalSession: TerminalSurfaceOpenURLDelegate {
     func terminalDidRequestOpenURL(_ url: String, kind _: TerminalOpenURLKind) {
         guard let target = URL(string: url) else { return }
         NSWorkspace.shared.open(target)
+    }
+}
+
+extension TerminalSession: TerminalSurfacePwdDelegate {
+    func terminalDidChangeWorkingDirectory(_ path: String) {
+        guard !path.isEmpty else { return }
+        reportedWorkingDirectory = path
     }
 }

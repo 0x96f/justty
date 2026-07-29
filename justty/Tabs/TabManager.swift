@@ -27,24 +27,24 @@ final class TabManager: ObservableObject {
 
     private var roster = TabRoster()
     private var cancellables = Set<AnyCancellable>()
-    private let makeSession: () -> TerminalSession
+    private let makeSession: (String) -> TerminalSession
     private let confirmCloseHandler: (TerminalSession, @escaping () -> Void) -> Void
     private let closeWindowHandler: (NSWindow?) -> Void
 
     init(
-        makeSession: (() -> TerminalSession)? = nil,
+        makeSession: ((String) -> TerminalSession)? = nil,
         createInitialTab: Bool = true,
         confirmClose: ((TerminalSession, @escaping () -> Void) -> Void)? = nil,
         closeWindow: ((NSWindow?) -> Void)? = nil
     ) {
-        self.makeSession = makeSession ?? { TerminalSession() }
+        self.makeSession = makeSession ?? { TerminalSession(workingDirectory: $0) }
         self.closeWindowHandler = closeWindow ?? { window in
             DispatchQueue.main.async { window?.close() }
         }
         self.confirmCloseHandler = confirmClose ?? Self.defaultConfirmClose
 
         if createInitialTab {
-            newTab()
+            newTab(inheritingCwd: false)
         }
         NotificationCenter.default.publisher(for: .justtySettingsDidChange)
             .receive(on: RunLoop.main)
@@ -52,16 +52,33 @@ final class TabManager: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func newTab() {
+    /// Opens a tab. When `inheritingCwd` is true, launches in the selected tab's cwd.
+    func newTab(inheritingCwd: Bool = true) {
         endSearchOnSelected()
         hideFind(endSearch: false)
-        let session = makeSession()
+        let cwd = Self.workingDirectoryForNewTab(
+            inheritingCwd: inheritingCwd,
+            selected: selectedSession?.resolvedWorkingDirectory
+        )
+        let session = makeSession(cwd)
         session.onExited = { [weak self] exited in
             self?.close(exited, fromShellExit: true)
         }
         sessions.append(session)
         roster.add(session.id)
         selectedID = roster.selectedID
+    }
+
+    /// Pure policy for which directory a new tab should launch in.
+    static func workingDirectoryForNewTab(
+        inheritingCwd: Bool,
+        selected: String?,
+        home: String = NSHomeDirectory()
+    ) -> String {
+        if inheritingCwd, let selected {
+            return selected
+        }
+        return home
     }
 
     func select(_ id: TerminalSession.ID) {
@@ -118,8 +135,8 @@ final class TabManager: ObservableObject {
 
         switch outcome {
         case .openReplacementTab:
-            // Shell exit keeps the window alive with a fresh tab.
-            newTab()
+            // Shell exit keeps the window alive with a fresh tab at home.
+            newTab(inheritingCwd: false)
         case .dismissWindow:
             closeWindowHandler(windowToClose)
         case .remaining, .notFound:
