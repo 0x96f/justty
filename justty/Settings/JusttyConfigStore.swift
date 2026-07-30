@@ -145,25 +145,35 @@ struct JusttyConfigFile: Codable, Equatable {
     var theme: String
     var font: Font
     var window: Window
+    /// When true, closing a tab with a foreground process prompts for confirmation.
+    var confirmCloseRunningCommand: Bool
 
     enum CodingKeys: String, CodingKey {
         case theme
         case font
         case window
+        case confirmCloseRunningCommand = "confirm_close_running_command"
     }
 
     static var `default`: JusttyConfigFile {
         JusttyConfigFile(
             theme: Theme.defaultDarkThemeName,
             font: .default,
-            window: .default
+            window: .default,
+            confirmCloseRunningCommand: AppSettings.Defaults.confirmCloseRunningCommand
         )
     }
 
-    init(theme: String, font: Font, window: Window) {
+    init(
+        theme: String,
+        font: Font,
+        window: Window,
+        confirmCloseRunningCommand: Bool = AppSettings.Defaults.confirmCloseRunningCommand
+    ) {
         self.theme = theme
         self.font = font
         self.window = window
+        self.confirmCloseRunningCommand = confirmCloseRunningCommand
     }
 
     init(from decoder: Decoder) throws {
@@ -172,6 +182,10 @@ struct JusttyConfigFile: Codable, Equatable {
         theme = try container.decodeIfPresent(String.self, forKey: .theme) ?? defaults.theme
         font = try container.decodeIfPresent(Font.self, forKey: .font) ?? defaults.font
         window = try container.decodeIfPresent(Window.self, forKey: .window) ?? defaults.window
+        confirmCloseRunningCommand = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .confirmCloseRunningCommand
+        ) ?? defaults.confirmCloseRunningCommand
     }
 }
 

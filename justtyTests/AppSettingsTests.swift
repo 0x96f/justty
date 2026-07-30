@@ -35,6 +35,7 @@ struct AppSettingsTests {
         #expect(settings.windowOriginY == AppSettings.Defaults.windowOriginY)
         #expect(settings.windowColumns == AppSettings.Defaults.windowColumns)
         #expect(settings.windowRows == AppSettings.Defaults.windowRows)
+        #expect(settings.confirmCloseRunningCommand == AppSettings.Defaults.confirmCloseRunningCommand)
         #expect(settings.fontSize == Double(TerminalFont.defaultSize))
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
@@ -243,5 +244,49 @@ struct AppSettingsTests {
         #expect(settings.theme == Theme.defaultDarkThemeName)
         #expect(settings.terminalPadding == AppSettings.Defaults.terminalPadding)
         #expect(settings.windowColumns == AppSettings.Defaults.windowColumns)
+    }
+
+    @Test func confirmCloseRunningCommandDefaultsTrue() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.confirmCloseRunningCommand == true)
+        #expect(AppSettings.Defaults.confirmCloseRunningCommand == true)
+    }
+
+    @Test func missingConfirmCloseKeyDefaultsToTrue() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        try """
+        theme: GitHub Dark Default
+        window:
+          padding: 8
+        """.write(to: url, atomically: true, encoding: .utf8)
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.confirmCloseRunningCommand == true)
+    }
+
+    @Test func confirmCloseRunningCommandPersistsAndReloads() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        settings.confirmCloseRunningCommand = false
+
+        let yaml = try String(contentsOf: url, encoding: .utf8)
+        #expect(yaml.contains("confirm_close_running_command: false"))
+
+        let loaded = try JusttyConfigStore.load(from: url)
+        #expect(loaded.confirmCloseRunningCommand == false)
+
+        var config = JusttyConfigFile.default
+        config.confirmCloseRunningCommand = true
+        try JusttyConfigStore.save(config, to: url)
+
+        settings.reloadFromDisk()
+        #expect(settings.confirmCloseRunningCommand == true)
     }
 }

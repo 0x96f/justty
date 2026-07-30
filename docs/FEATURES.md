@@ -9,7 +9,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 - **Shortcuts** - ⌘T new tab, ⌘W close tab, ⌘⇧] / ⌘⇧[ next / previous tab.
 - **Titles** - Tab titles follow the shell / program title from the terminal.
 - **New tab directory** - ⌘T / **+** open in the active tab’s working directory (usually the shell process cwd; OSC 7 when the shell emits it). New windows and replacement tabs after shell exit start in `$HOME`.
-- **Close with running command** - Closing a tab that has a foreground process prompts for confirmation.
+- **Close with running command** - Closing a tab that has a foreground process prompts for confirmation (toggle in Settings → Window).
 - **Last tab** - Closing the last tab closes the window. If the shell exits on the last tab, a new tab is opened instead.
 
 ## Terminal
@@ -30,7 +30,7 @@ Open with ⌘, or the tab-bar gear. Values persist in `~/.config/justty/config.y
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Theme**              | GhosttyTheme catalog, grouped Light / Dark. Defaults: GitHub Light Default / GitHub Dark Default.                                                                   |
 | **Font**               | Family (System or detected monospace), size 8–32 px (default 13), line height 0.8–2.0×, weight Regular / Medium / Semibold / Bold.                                  |
-| **Window**             | Padding 0–64 px; starting X×Y from the top-left of the main screen (clamped to the visible frame); size as character grid (cols 20–500, rows 5–200; default 80×24). |
+| **Window**             | Confirm before closing tabs with a running command (default on); padding 0–64 px; starting X×Y from the top-left of the main screen (clamped to the visible frame); size as character grid (cols 20–500, rows 5–200; default 80×24). |
 | **Keyboard Shortcuts** | Opens a read-only sheet (same list as below).                                                                                                                       |
 | **Configuration**      | **Open Configuration…** opens `config.yml` in the default text editor (Ghostty-style).                                                                              |
 

@@ -29,18 +29,25 @@ final class TabManager: ObservableObject {
     private let makeSession: (String) -> TerminalSession
     private let confirmCloseHandler: (TerminalSession, @escaping () -> Void) -> Void
     private let closeWindowHandler: (NSWindow?) -> Void
+    private let shouldConfirmBusyClose: () -> Bool
+    private let isSessionBusy: (TerminalSession) -> Bool
 
     init(
         makeSession: ((String) -> TerminalSession)? = nil,
         createInitialTab: Bool = true,
         confirmClose: ((TerminalSession, @escaping () -> Void) -> Void)? = nil,
-        closeWindow: ((NSWindow?) -> Void)? = nil
+        closeWindow: ((NSWindow?) -> Void)? = nil,
+        shouldConfirmBusyClose: (() -> Bool)? = nil,
+        isSessionBusy: ((TerminalSession) -> Bool)? = nil
     ) {
         self.makeSession = makeSession ?? { TerminalSession(workingDirectory: $0) }
         self.closeWindowHandler = closeWindow ?? { window in
             DispatchQueue.main.async { window?.close() }
         }
         self.confirmCloseHandler = confirmClose ?? Self.defaultConfirmClose
+        self.shouldConfirmBusyClose = shouldConfirmBusyClose
+            ?? { AppSettings.shared.confirmCloseRunningCommand }
+        self.isSessionBusy = isSessionBusy ?? { $0.hasRunningCommand }
 
         if createInitialTab {
             newTab(inheritingCwd: false)
@@ -79,6 +86,16 @@ final class TabManager: ObservableObject {
         return home
     }
 
+    /// Pure policy for whether closing a busy tab should show the confirm alert.
+    static func shouldConfirmClose(
+        fromShellExit: Bool,
+        skipConfirm: Bool,
+        hasRunningCommand: Bool,
+        confirmEnabled: Bool
+    ) -> Bool {
+        !fromShellExit && !skipConfirm && hasRunningCommand && confirmEnabled
+    }
+
     func select(_ id: TerminalSession.ID) {
         if id != selectedID {
             dismissFindIfNeeded()
@@ -97,7 +114,12 @@ final class TabManager: ObservableObject {
         fromShellExit: Bool = false,
         skipConfirm: Bool = false
     ) {
-        if !fromShellExit, !skipConfirm, session.hasRunningCommand {
+        if Self.shouldConfirmClose(
+            fromShellExit: fromShellExit,
+            skipConfirm: skipConfirm,
+            hasRunningCommand: isSessionBusy(session),
+            confirmEnabled: shouldConfirmBusyClose()
+        ) {
             confirmCloseHandler(session) { [weak self] in
                 self?.close(session, skipConfirm: true)
             }

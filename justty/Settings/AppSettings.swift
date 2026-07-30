@@ -26,6 +26,7 @@ final class AppSettings: ObservableObject {
         static let windowOriginY = 0
         static let windowColumns = 80
         static let windowRows = 24
+        static let confirmCloseRunningCommand = true
     }
 
     enum Limits {
@@ -144,6 +145,13 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    @Published var confirmCloseRunningCommand: Bool {
+        didSet {
+            guard !isLoading else { return }
+            persistAndNotify()
+        }
+    }
+
     /// True while seeding properties from disk so didSet side effects
     /// (including `NSApp`, which is still nil during `App.init`) do not run.
     private var isLoading = true
@@ -170,6 +178,7 @@ final class AppSettings: ObservableObject {
         windowOriginY = Defaults.windowOriginY
         windowColumns = Defaults.windowColumns
         windowRows = Defaults.windowRows
+        confirmCloseRunningCommand = Defaults.confirmCloseRunningCommand
 
         apply(Self.loadOrCreate(at: configURL))
         Theme.reloadSelection(theme)
@@ -233,6 +242,7 @@ final class AppSettings: ObservableObject {
         windowOriginY = Self.clamp(config.window.originY, to: Limits.windowOrigin)
         windowColumns = Self.clamp(config.window.columns, to: Limits.windowColumns)
         windowRows = Self.clamp(config.window.rows, to: Limits.windowRows)
+        confirmCloseRunningCommand = config.confirmCloseRunningCommand
     }
 
     private func persistAndNotify() {
@@ -305,7 +315,8 @@ final class AppSettings: ObservableObject {
                 originY: windowOriginY,
                 columns: windowColumns,
                 rows: windowRows
-            )
+            ),
+            confirmCloseRunningCommand: confirmCloseRunningCommand
         )
     }
 

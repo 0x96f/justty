@@ -77,6 +77,11 @@ struct SettingsView: View {
             }
 
             Section("Window") {
+                Toggle(
+                    "Confirm before closing tabs with a running command",
+                    isOn: $settings.confirmCloseRunningCommand
+                )
+
                 LabeledContent("Padding") {
                     HStack(spacing: 4) {
                         TextField(
