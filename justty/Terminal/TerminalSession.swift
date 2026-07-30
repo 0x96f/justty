@@ -30,6 +30,12 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     /// running foreground command without shell integration.
     private var shellPid: pid_t?
     private var isTerminating = false
+    /// Last non-empty OSC window title while a foreground command is running
+    /// (e.g. Cursor Agent). Cleared when the shell becomes idle again.
+    private var oscTitle: String?
+    /// Polls the PTY foreground process so the tab chip shows command basename
+    /// while busy and the login shell when idle (no push from libghostty).
+    private var titlePollTimer: Timer?
     var onExited: ((TerminalSession) -> Void)?
 
     var effectiveFontSize: Double {
@@ -92,6 +98,24 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         return (isBusy, nil)
     }
 
+    /// Tab chip label: OSC title while busy if set, else process basename, else shell.
+    static func displayTitle(
+        isBusy: Bool,
+        foregroundName: String?,
+        shellName: String,
+        oscTitle: String? = nil
+    ) -> String {
+        if isBusy {
+            if let oscTitle, !oscTitle.isEmpty {
+                return oscTitle
+            }
+            if let foregroundName, !foregroundName.isEmpty {
+                return foregroundName
+            }
+        }
+        return shellName
+    }
+
     init(workingDirectory: String = NSHomeDirectory()) {
         let shellPath = JusttyTerminalConfig.loginShell()
         let launchCommand = JusttyTerminalConfig.makeLaunchCommand(shellPath: shellPath)
@@ -129,6 +153,7 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         )
         terminalView.controller = controller
         applyAppearance()
+        startTitlePolling()
     }
 
     /// Reconfigures libghostty when theme or font settings change.
@@ -194,12 +219,60 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
         guard !hasExited, !isTerminating else { return }
         isTerminating = true
         hasExited = true
+        oscTitle = nil
+        stopTitlePolling()
         terminalView.controller = nil
     }
 
     private func refreshShellPid() {
         // hasRunningCommand locks shellPid when the foreground is the login shell.
         _ = hasRunningCommand
+    }
+
+    private func startTitlePolling() {
+        stopTitlePolling()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshTitleFromForeground()
+            }
+        }
+        // Common mode keeps polling while the run loop is in tracking/event modes
+        // (e.g. mouse-down on the tab bar) and for parked tabs.
+        RunLoop.main.add(timer, forMode: .common)
+        titlePollTimer = timer
+        refreshTitleFromForeground()
+    }
+
+    private func stopTitlePolling() {
+        titlePollTimer?.invalidate()
+        titlePollTimer = nil
+    }
+
+    private func refreshTitleFromForeground() {
+        let foreground = terminalView.foregroundPid
+        let name = foreground.flatMap(Self.processName(for:))
+        let result = Self.hasRunningCommand(
+            foregroundPid: foreground,
+            foregroundName: name,
+            shellName: shellName,
+            shellPid: shellPid
+        )
+        if let locked = result.lockedShellPid {
+            shellPid = locked
+        }
+        // Drop program OSC titles once the login shell is foreground again.
+        if !result.isBusy {
+            oscTitle = nil
+        }
+        let next = Self.displayTitle(
+            isBusy: result.isBusy,
+            foregroundName: name,
+            shellName: shellName,
+            oscTitle: oscTitle
+        )
+        if title != next {
+            title = next
+        }
     }
 
     private static func processName(for pid: pid_t) -> String? {
@@ -217,7 +290,11 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
 extension TerminalSession: TerminalSurfaceTitleDelegate {
     func terminalDidChangeTitle(_ title: String) {
         guard !title.isEmpty else { return }
-        self.title = title
+        // Only latch OSC while a foreground command is running so shell
+        // prompt titles (cwd / user@host) do not stick onto the next command.
+        guard hasRunningCommand else { return }
+        oscTitle = title
+        refreshTitleFromForeground()
     }
 }
 
@@ -226,6 +303,7 @@ extension TerminalSession: TerminalSurfaceCloseDelegate {
         guard !isTerminating else { return }
         isTerminating = true
         hasExited = true
+        stopTitlePolling()
         onExited?(self)
     }
 }

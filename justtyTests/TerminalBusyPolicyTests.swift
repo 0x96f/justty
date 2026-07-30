@@ -74,4 +74,76 @@ struct TerminalBusyPolicyTests {
         #expect(result.isBusy == true)
         #expect(result.lockedShellPid == nil)
     }
+
+    @Test func displayTitleIdleUsesShell() {
+        let title = TerminalSession.displayTitle(
+            isBusy: false,
+            foregroundName: "zsh",
+            shellName: "zsh"
+        )
+        #expect(title == "zsh")
+    }
+
+    @Test func displayTitleBusyUsesForegroundBasename() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "node",
+            shellName: "zsh"
+        )
+        #expect(title == "node")
+    }
+
+    @Test func displayTitleBusyWithNilNameFallsBackToShell() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: nil,
+            shellName: "zsh"
+        )
+        #expect(title == "zsh")
+    }
+
+    @Test func displayTitleIdleAfterBusyUsesShell() {
+        let busy = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "vim",
+            shellName: "zsh"
+        )
+        let idle = TerminalSession.displayTitle(
+            isBusy: false,
+            foregroundName: "zsh",
+            shellName: "zsh"
+        )
+        #expect(busy == "vim")
+        #expect(idle == "zsh")
+    }
+
+    @Test func displayTitleBusyPrefersOscOverProcess() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "node",
+            shellName: "zsh",
+            oscTitle: "Cursor Agent"
+        )
+        #expect(title == "Cursor Agent")
+    }
+
+    @Test func displayTitleIdleIgnoresOsc() {
+        let title = TerminalSession.displayTitle(
+            isBusy: false,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            oscTitle: "Cursor Agent"
+        )
+        #expect(title == "zsh")
+    }
+
+    @Test func displayTitleBusyEmptyOscFallsBackToProcess() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "node",
+            shellName: "zsh",
+            oscTitle: ""
+        )
+        #expect(title == "node")
+    }
 }
