@@ -174,6 +174,24 @@ final class TabManager: ObservableObject {
         selectedID = roster.selectedID
     }
 
+    func moveSelectedLeft() {
+        moveSelected(by: -1)
+    }
+
+    func moveSelectedRight() {
+        moveSelected(by: 1)
+    }
+
+    private func moveSelected(by offset: Int) {
+        guard let selectedID,
+              let index = sessions.firstIndex(where: { $0.id == selectedID }) else { return }
+        let target = index + offset
+        guard sessions.indices.contains(target) else { return }
+        sessions.swapAt(index, target)
+        roster.moveSelected(by: offset)
+        self.selectedID = roster.selectedID
+    }
+
     func refreshAppearance() {
         for session in sessions {
             session.applyAppearance(clearFontZoom: true)

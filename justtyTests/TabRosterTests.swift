@@ -130,4 +130,52 @@ struct TabRosterTests {
         roster.add(UUID())
         #expect(roster.remove(id: UUID(), fromShellExit: false) == .notFound)
     }
+
+    @Test func moveSelectedSwapsWithNeighbor() {
+        var roster = TabRoster()
+        let a = UUID()
+        let b = UUID()
+        let c = UUID()
+        roster.add(a)
+        roster.add(b)
+        roster.add(c)
+        roster.select(b)
+
+        roster.moveSelected(by: -1)
+        #expect(roster.orderedIDs == [b, a, c])
+        #expect(roster.selectedID == b)
+
+        roster.moveSelected(by: 1)
+        #expect(roster.orderedIDs == [a, b, c])
+        #expect(roster.selectedID == b)
+
+        roster.moveSelected(by: 1)
+        #expect(roster.orderedIDs == [a, c, b])
+        #expect(roster.selectedID == b)
+    }
+
+    @Test func moveSelectedNoOpsAtEnds() {
+        var roster = TabRoster()
+        let a = UUID()
+        let b = UUID()
+        roster.add(a)
+        roster.add(b)
+        roster.select(a)
+
+        roster.moveSelected(by: -1)
+        #expect(roster.orderedIDs == [a, b])
+        #expect(roster.selectedID == a)
+
+        roster.select(b)
+        roster.moveSelected(by: 1)
+        #expect(roster.orderedIDs == [a, b])
+        #expect(roster.selectedID == b)
+    }
+
+    @Test func moveSelectedNoOpsWithoutSelection() {
+        var roster = TabRoster()
+        roster.moveSelected(by: 1)
+        #expect(roster.orderedIDs.isEmpty)
+        #expect(roster.selectedID == nil)
+    }
 }

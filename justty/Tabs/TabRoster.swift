@@ -48,6 +48,15 @@ struct TabRoster {
         self.selectedID = orderedIDs[(index - 1 + orderedIDs.count) % orderedIDs.count]
     }
 
+    /// Swaps the selected tab with its neighbor. No-op at ends or with no selection.
+    mutating func moveSelected(by offset: Int) {
+        guard let selectedID,
+              let index = orderedIDs.firstIndex(of: selectedID) else { return }
+        let target = index + offset
+        guard orderedIDs.indices.contains(target) else { return }
+        orderedIDs.swapAt(index, target)
+    }
+
     /// Removes `id` and updates selection to mirror `TabManager.close`.
     mutating func remove(id: UUID, fromShellExit: Bool) -> RemoveOutcome {
         guard let index = orderedIDs.firstIndex(of: id) else {

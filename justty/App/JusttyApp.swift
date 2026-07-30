@@ -79,6 +79,22 @@ private struct JusttyCommands: Commands {
             .keyboardShortcut("[", modifiers: [.command, .shift])
             .disabled(tabs == nil)
 
+            Button("Move Tab Left") {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    tabs?.moveSelectedLeft()
+                }
+            }
+            .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
+            .disabled(tabs == nil)
+
+            Button("Move Tab Right") {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    tabs?.moveSelectedRight()
+                }
+            }
+            .keyboardShortcut(.rightArrow, modifiers: [.command, .shift])
+            .disabled(tabs == nil)
+
             Divider()
 
             Button("Reload Configuration") {

@@ -45,6 +45,8 @@ struct TabBarView: View {
                         .id(session.id)
                     }
                 }
+                // Animate adjacent swaps from ⌘⇧← / ⌘⇧→ reorder.
+                .animation(.easeInOut(duration: 0.15), value: tabs.sessions.map(\.id))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
                 .scrollTargetLayout()
