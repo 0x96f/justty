@@ -9,7 +9,7 @@ import Foundation
 /// Resolves a process cwd for new-tab inheritance without Ghostty shell integration.
 enum ProcessWorkingDirectory {
     /// Prefer OSC 7 when usable; else shell/foreground pid cwd; else home.
-    static func resolve(
+    nonisolated static func resolve(
         reportedPath: String?,
         shellPid: pid_t?,
         foregroundPid: pid_t?,
@@ -28,7 +28,7 @@ enum ProcessWorkingDirectory {
         return home
     }
 
-    static func isUsableDirectory(_ path: String) -> Bool {
+    nonisolated static func isUsableDirectory(_ path: String) -> Bool {
         guard !path.isEmpty else { return false }
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
@@ -36,7 +36,7 @@ enum ProcessWorkingDirectory {
     }
 
     /// Current working directory of `pid` via `PROC_PIDVNODEPATHINFO`.
-    static func cwd(of pid: pid_t) -> String? {
+    nonisolated static func cwd(of pid: pid_t) -> String? {
         var info = proc_vnodepathinfo()
         let size = Int32(MemoryLayout<proc_vnodepathinfo>.size)
         let result = proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &info, size)

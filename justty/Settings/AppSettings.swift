@@ -13,7 +13,7 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     private static let logger = Logger(subsystem: "dev.justty", category: "settings")
-    private static let defaultPersistDebounce: Duration = .milliseconds(250)
+    private nonisolated static let defaultPersistDebounce: Duration = .milliseconds(250)
 
     private let configURL: URL
     private let persistDebounce: Duration

@@ -246,7 +246,7 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     private func startTitlePolling() {
         stopTitlePolling()
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.refreshTitleFromForeground()
             }
         }
