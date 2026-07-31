@@ -194,8 +194,9 @@ private struct TabItemView: View {
         HStack(spacing: 6) {
             Text(session.title)
                 .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(maxWidth: 160, alignment: .leading)
+                .truncationMode(.tail)
+                // minWidth 0 lets the label shrink under the chip max instead of resisting truncation.
+                .frame(minWidth: 0, alignment: .leading)
 
             Button(action: onClose) {
                 Image(systemName: "xmark")
@@ -210,11 +211,13 @@ private struct TabItemView: View {
         .font(.system(size: 12))
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
+        .frame(maxWidth: JusttyConstants.maxTabWidth, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
         )
         .contentShape(Rectangle())
+        .help(session.title)
         .onTapGesture(perform: onSelect)
         .contextMenu {
             Button("Close Tab", action: onClose)

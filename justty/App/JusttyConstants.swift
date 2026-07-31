@@ -11,6 +11,8 @@ enum JusttyConstants {
     static let defaultTerminalHeight: CGFloat = 600
 
     static let tabBarHeight: CGFloat = 36
+    /// Cap each tab chip so long titles truncate instead of growing unboundedly.
+    static let maxTabWidth: CGFloat = 250
     /// Space reserved for traffic lights when the title bar is hidden.
     static let trafficLightsLeadingInset: CGFloat = 78
 
