@@ -31,6 +31,15 @@ jobs:
           done
           xcodebuild -version
 
+      - name: Test
+        run: |
+          xcodebuild \
+            -project justty.xcodeproj \
+            -scheme justty \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            test
+
       # Same stable self-signed identity on every release so users can verify
       # Authority=Justty Self-Signed. Generate secrets per docs/SIGNING.md.
       - name: Import signing certificate
