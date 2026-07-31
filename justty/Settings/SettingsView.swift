@@ -82,6 +82,11 @@ struct SettingsView: View {
                     isOn: $settings.confirmCloseRunningCommand
                 )
 
+                Toggle(
+                    "Show directory in tab titles",
+                    isOn: $settings.showCwdInTabTitle
+                )
+
                 LabeledContent("Padding") {
                     HStack(spacing: 4) {
                         TextField(

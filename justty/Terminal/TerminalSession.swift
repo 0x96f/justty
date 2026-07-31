@@ -99,21 +99,30 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     }
 
     /// Tab chip label: OSC title while busy if set, else process basename, else shell.
+    /// When `directoryName` is non-empty, prefixes as `dir - label`.
     static func displayTitle(
         isBusy: Bool,
         foregroundName: String?,
         shellName: String,
-        oscTitle: String? = nil
+        oscTitle: String? = nil,
+        directoryName: String? = nil
     ) -> String {
+        let base: String
         if isBusy {
             if let oscTitle, !oscTitle.isEmpty {
-                return oscTitle
+                base = oscTitle
+            } else if let foregroundName, !foregroundName.isEmpty {
+                base = foregroundName
+            } else {
+                base = shellName
             }
-            if let foregroundName, !foregroundName.isEmpty {
-                return foregroundName
-            }
+        } else {
+            base = shellName
         }
-        return shellName
+        guard let directoryName, !directoryName.isEmpty else {
+            return base
+        }
+        return "\(directoryName) - \(base)"
     }
 
     init(workingDirectory: String = NSHomeDirectory()) {
@@ -126,7 +135,12 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
 
         self.launchCommand = launchCommand
         self.shellName = shellName
-        title = shellName
+        title = Self.displayTitle(
+            isBusy: false,
+            foregroundName: nil,
+            shellName: shellName,
+            directoryName: Self.directoryNameForTitle(launchCwd)
+        )
         controller = TerminalController(
             configSource: .none,
             theme: JusttyTerminalConfig.ghosttyTheme(),
@@ -268,11 +282,24 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
             isBusy: result.isBusy,
             foregroundName: name,
             shellName: shellName,
-            oscTitle: oscTitle
+            oscTitle: oscTitle,
+            directoryName: Self.directoryNameForTitle(resolvedWorkingDirectory)
         )
         if title != next {
             title = next
         }
+    }
+
+    /// Recomputes the tab chip from current foreground / cwd / settings.
+    func refreshTitle() {
+        refreshTitleFromForeground()
+    }
+
+    /// Basename for the title prefix when the setting is on; otherwise nil.
+    private static func directoryNameForTitle(_ path: String) -> String? {
+        guard AppSettings.shared.showCwdInTabTitle else { return nil }
+        let name = (path as NSString).lastPathComponent
+        return name.isEmpty ? nil : name
     }
 
     private static func processName(for pid: pid_t) -> String? {
@@ -328,5 +355,6 @@ extension TerminalSession: TerminalSurfacePwdDelegate {
     func terminalDidChangeWorkingDirectory(_ path: String) {
         guard !path.isEmpty else { return }
         reportedWorkingDirectory = path
+        refreshTitleFromForeground()
     }
 }

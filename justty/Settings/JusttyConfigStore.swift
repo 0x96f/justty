@@ -147,12 +147,15 @@ struct JusttyConfigFile: Codable, Equatable {
     var window: Window
     /// When true, closing a tab with a foreground process prompts for confirmation.
     var confirmCloseRunningCommand: Bool
+    /// When true, tab titles are prefixed with the cwd basename (`dir - node`).
+    var showCwdInTabTitle: Bool
 
     enum CodingKeys: String, CodingKey {
         case theme
         case font
         case window
         case confirmCloseRunningCommand = "confirm_close_running_command"
+        case showCwdInTabTitle = "show_cwd_in_tab_title"
     }
 
     static var `default`: JusttyConfigFile {
@@ -160,7 +163,8 @@ struct JusttyConfigFile: Codable, Equatable {
             theme: Theme.defaultDarkThemeName,
             font: .default,
             window: .default,
-            confirmCloseRunningCommand: AppSettings.Defaults.confirmCloseRunningCommand
+            confirmCloseRunningCommand: AppSettings.Defaults.confirmCloseRunningCommand,
+            showCwdInTabTitle: AppSettings.Defaults.showCwdInTabTitle
         )
     }
 
@@ -168,12 +172,14 @@ struct JusttyConfigFile: Codable, Equatable {
         theme: String,
         font: Font,
         window: Window,
-        confirmCloseRunningCommand: Bool = AppSettings.Defaults.confirmCloseRunningCommand
+        confirmCloseRunningCommand: Bool = AppSettings.Defaults.confirmCloseRunningCommand,
+        showCwdInTabTitle: Bool = AppSettings.Defaults.showCwdInTabTitle
     ) {
         self.theme = theme
         self.font = font
         self.window = window
         self.confirmCloseRunningCommand = confirmCloseRunningCommand
+        self.showCwdInTabTitle = showCwdInTabTitle
     }
 
     init(from decoder: Decoder) throws {
@@ -186,6 +192,10 @@ struct JusttyConfigFile: Codable, Equatable {
             Bool.self,
             forKey: .confirmCloseRunningCommand
         ) ?? defaults.confirmCloseRunningCommand
+        showCwdInTabTitle = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .showCwdInTabTitle
+        ) ?? defaults.showCwdInTabTitle
     }
 }
 

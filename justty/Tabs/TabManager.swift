@@ -54,7 +54,10 @@ final class TabManager: ObservableObject {
         }
         NotificationCenter.default.publisher(for: .justtySettingsDidChange)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.refreshAppearance() }
+            .sink { [weak self] _ in
+                self?.refreshAppearance()
+                self?.refreshTitles()
+            }
             .store(in: &cancellables)
     }
 
@@ -195,6 +198,12 @@ final class TabManager: ObservableObject {
     func refreshAppearance() {
         for session in sessions {
             session.applyAppearance(clearFontZoom: true)
+        }
+    }
+
+    func refreshTitles() {
+        for session in sessions {
+            session.refreshTitle()
         }
     }
 

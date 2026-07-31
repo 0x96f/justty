@@ -146,4 +146,55 @@ struct TerminalBusyPolicyTests {
         )
         #expect(title == "node")
     }
+
+    @Test func displayTitleIdleWithDirectoryPrefixesShell() {
+        let title = TerminalSession.displayTitle(
+            isBusy: false,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            directoryName: "dir"
+        )
+        #expect(title == "dir - zsh")
+    }
+
+    @Test func displayTitleBusyWithDirectoryPrefixesProcess() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "node",
+            shellName: "zsh",
+            directoryName: "dir"
+        )
+        #expect(title == "dir - node")
+    }
+
+    @Test func displayTitleBusyWithDirectoryPrefixesOsc() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "node",
+            shellName: "zsh",
+            oscTitle: "Cursor Agent",
+            directoryName: "dir"
+        )
+        #expect(title == "dir - Cursor Agent")
+    }
+
+    @Test func displayTitleEmptyDirectoryKeepsBaseLabel() {
+        let title = TerminalSession.displayTitle(
+            isBusy: true,
+            foregroundName: "node",
+            shellName: "zsh",
+            directoryName: ""
+        )
+        #expect(title == "node")
+    }
+
+    @Test func displayTitleNilDirectoryKeepsBaseLabel() {
+        let title = TerminalSession.displayTitle(
+            isBusy: false,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            directoryName: nil
+        )
+        #expect(title == "zsh")
+    }
 }

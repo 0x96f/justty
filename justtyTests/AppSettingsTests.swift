@@ -36,6 +36,7 @@ struct AppSettingsTests {
         #expect(settings.windowColumns == AppSettings.Defaults.windowColumns)
         #expect(settings.windowRows == AppSettings.Defaults.windowRows)
         #expect(settings.confirmCloseRunningCommand == AppSettings.Defaults.confirmCloseRunningCommand)
+        #expect(settings.showCwdInTabTitle == AppSettings.Defaults.showCwdInTabTitle)
         #expect(settings.fontSize == Double(TerminalFont.defaultSize))
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
@@ -288,5 +289,49 @@ struct AppSettingsTests {
 
         settings.reloadFromDisk()
         #expect(settings.confirmCloseRunningCommand == true)
+    }
+
+    @Test func showCwdInTabTitleDefaultsTrue() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.showCwdInTabTitle == true)
+        #expect(AppSettings.Defaults.showCwdInTabTitle == true)
+    }
+
+    @Test func missingShowCwdInTabTitleKeyDefaultsToTrue() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        try """
+        theme: GitHub Dark Default
+        window:
+          padding: 8
+        """.write(to: url, atomically: true, encoding: .utf8)
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.showCwdInTabTitle == true)
+    }
+
+    @Test func showCwdInTabTitlePersistsAndReloads() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        settings.showCwdInTabTitle = true
+
+        let yaml = try String(contentsOf: url, encoding: .utf8)
+        #expect(yaml.contains("show_cwd_in_tab_title: true"))
+
+        let loaded = try JusttyConfigStore.load(from: url)
+        #expect(loaded.showCwdInTabTitle == true)
+
+        var config = JusttyConfigFile.default
+        config.showCwdInTabTitle = false
+        try JusttyConfigStore.save(config, to: url)
+
+        settings.reloadFromDisk()
+        #expect(settings.showCwdInTabTitle == false)
     }
 }
