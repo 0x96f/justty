@@ -41,12 +41,17 @@ The cask clears Gatekeeper quarantine on install. Details: [docs/HOMEBREW.md](do
 
 ## Self-signed builds
 
-Release builds are signed with a stable **Justty Self-Signed** identity (not an Apple Developer ID / not notarized). Verify:
+Release builds are signed with a stable **Justty Self-Signed** identity (not an Apple Developer ID / not notarized). Verify both the Authority string **and** the leaf SHA-256 fingerprint (CN alone is forgeable):
 
 ```bash
 codesign -dv --verbose=4 Justty.app
 # expect Authority=Justty Self-Signed
 codesign --verify --verbose=4 Justty.app
+
+codesign -d --extract-certificates=/tmp/justty-cert Justty.app
+openssl x509 -inform DER -in /tmp/justty-cert0 -noout -fingerprint -sha256
+# expect SHA256 Fingerprint=82:9B:F9:9F:A6:C3:28:64:98:C3:57:24:04:3A:F2:CD:71:4B:35:BD:D1:C2:88:B7:D8:86:B6:C2:DD:E2:2C:11
+rm -f /tmp/justty-cert*
 ```
 
 Gatekeeper may still say the app “can’t be opened because it is from an unidentified developer.”

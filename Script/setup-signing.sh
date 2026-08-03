@@ -32,6 +32,16 @@ keep_exports() {
 
 trap cleanup EXIT
 
+print_fingerprint() {
+  local cert_pem="$1"
+  local fp
+  fp="$(openssl x509 -in "$cert_pem" -noout -fingerprint -sha256 \
+    | awk -F= '{print toupper($2)}' | tr -d ':')"
+  echo "SHA-256 fingerprint: ${fp}"
+  echo "If you rotated the identity, update the EXPECTED fingerprint in"
+  echo ".github/workflows/release.yml and the docs (README / SIGNING.md)."
+}
+
 write_secrets_help() {
   base64 -i "$EXPORT_P12" | tr -d '\n' > "$EXPORT_B64"
   echo
@@ -72,12 +82,15 @@ if ! security find-identity -p codesigning 2>/dev/null | grep -q "${IDENTITY}"; 
     -addext "keyUsage=critical,digitalSignature" \
     -addext "extendedKeyUsage=critical,codeSigning"
 
+  print_fingerprint "$TMP/cert.pem"
+
   # CI P12 uses a random password; import copy uses a throwaway local password.
   pkcs12_export "$EXPORT_P12" "$P12_PASSWORD"
-  pkcs12_export "$TMP/justty.p12" "justty"
+  LOCAL_P12_PASS="$(openssl rand -hex 12)"
+  pkcs12_export "$TMP/justty.p12" "$LOCAL_P12_PASS"
 
   security import "$TMP/justty.p12" -k "$KEYCHAIN" \
-    -P justty -A -T /usr/bin/codesign
+    -P "$LOCAL_P12_PASS" -T /usr/bin/codesign
 
   echo "Imported into login keychain."
   write_secrets_help
@@ -85,10 +98,26 @@ if ! security find-identity -p codesigning 2>/dev/null | grep -q "${IDENTITY}"; 
 fi
 
 echo "Found existing identity: ${IDENTITY}"
-echo "Exporting from login keychain (may include other identities; prefer Keychain Access → export only this cert if needed)."
-echo "Approve the keychain dialog if asked…"
-security export -t identities -f pkcs12 \
-  -k "$KEYCHAIN" \
-  -P "$P12_PASSWORD" -o "$EXPORT_P12"
+CERT_PEM="$(mktemp)"
+if security find-certificate -c "${IDENTITY}" -p >"$CERT_PEM" 2>/dev/null; then
+  print_fingerprint "$CERT_PEM"
+fi
+rm -f "$CERT_PEM"
 
-write_secrets_help
+echo
+echo "Refusing to bulk-export the login keychain (that can pack unrelated identities)."
+echo "To refresh CI secrets, export only this identity:"
+echo
+echo "  1. Open Keychain Access → login → My Certificates"
+echo "  2. Select \"${IDENTITY}\" → File → Export Items…"
+echo "  3. Save as PKCS#12 (.p12), then:"
+echo
+echo "     P12_PASSWORD=\"\$(openssl rand -hex 24)\"; echo \"password: \$P12_PASSWORD\""
+echo "     # use that password in the Keychain Access export dialog"
+echo "     base64 -i /path/to/Justty.p12 | tr -d '\\n' > /tmp/signing.p12.base64"
+echo "     gh secret set SIGNING_P12_BASE64 < /tmp/signing.p12.base64"
+echo "     gh secret set SIGNING_P12_PASSWORD --body \"\$P12_PASSWORD\""
+echo "     rm -f /tmp/signing.p12.base64 /path/to/Justty.p12"
+echo
+echo "Or keep the P12 produced when the identity was first created."
+exit 1

@@ -38,6 +38,21 @@ enum TerminalFont {
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 
+    /// Empty (system default) or a selectable monospace family; rejects newlines /
+    /// control chars that could inject Ghostty config lines via font-family.
+    static func sanitizedFamily(
+        _ raw: String,
+        allowed: [String] = selectableFamilies()
+    ) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        guard trimmed.unicodeScalars.allSatisfy({ CharacterSet.controlCharacters.inverted.contains($0) }),
+              !trimmed.contains(where: { $0.isNewline }),
+              allowed.contains(trimmed)
+        else { return "" }
+        return trimmed
+    }
+
     private static func representativeFont(inFamily family: String) -> NSFont? {
         if let font = NSFontManager.shared.font(
             withFamily: family, traits: [], weight: 5, size: defaultSize

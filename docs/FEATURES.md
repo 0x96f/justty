@@ -80,7 +80,7 @@ Not exposed in Settings (host-owned defaults):
 - Scrollback limit ~4 MB
 - Scrollbar never shown
 - Option key as Alt
-- Clipboard: read ask, write allow, paste protection on
+- Clipboard: read deny (OSC 52), write allow; paste protection off until libghostty can show a real confirm UI
 - Shell integration off
 - Blinking block cursor
 - `TERM=xterm-256color`, `COLORTERM=truecolor`, `TERM_PROGRAM=Justty` (+ version when available)

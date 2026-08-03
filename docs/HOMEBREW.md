@@ -12,7 +12,7 @@ brew tap 0x96f/justty
 brew install --cask justty
 ```
 
-The cask clears Gatekeeper quarantine in `postflight`, so brew users should not need the manual `xattr` step.
+The cask clears Gatekeeper quarantine in `postflight`, so brew users should not need the manual `xattr` step. Builds are still self-signed — verify the leaf SHA-256 fingerprint (see [SIGNING.md](SIGNING.md)).
 
 ## Maintainer: auto-bump on release
 

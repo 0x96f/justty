@@ -85,9 +85,10 @@ enum WindowGeometry {
     private static func resolvedFont(from settings: AppSettings) -> NSFont {
         let size = CGFloat(settings.fontSize)
         let weight = settings.fontWeight.nsFontWeight
-        let family = settings.fontFamily.isEmpty
+        let sanitized = TerminalFont.sanitizedFamily(settings.fontFamily)
+        let family = sanitized.isEmpty
             ? TerminalFont.resolvedDefaultFamily
-            : settings.fontFamily
+            : sanitized
 
         if let font = NSFontManager.shared.font(
             withFamily: family,

@@ -242,7 +242,7 @@ final class AppSettings: ObservableObject {
 
     private func apply(_ config: JusttyConfigFile) {
         theme = Self.resolvedTheme(config.theme)
-        fontFamily = config.font.family
+        fontFamily = TerminalFont.sanitizedFamily(config.font.family)
         fontSize = Self.resolvedFontSize(Double(config.font.size))
         fontWeight = FontWeightSetting(rawValue: config.font.weight) ?? .regular
         lineHeight = Self.clamp(config.font.lineHeight, to: Limits.lineHeight)
@@ -373,7 +373,7 @@ final class AppSettings: ObservableObject {
             config.theme = resolvedTheme(theme)
         }
         if let family = defaults.string(forKey: "fontFamily") {
-            config.font.family = family
+            config.font.family = TerminalFont.sanitizedFamily(family)
         }
         let storedSize = defaults.double(forKey: "fontSize")
         if defaults.object(forKey: "fontSize") != nil {

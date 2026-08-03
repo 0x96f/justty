@@ -9,7 +9,19 @@ import Testing
 @testable import Justty
 
 struct ProcessWorkingDirectoryTests {
-    @Test func prefersReportedPathWhenUsable() {
+    @Test func prefersShellPidCwdOverReportedPath() {
+        let path = ProcessWorkingDirectory.resolve(
+            reportedPath: "/tmp",
+            shellPid: 42,
+            foregroundPid: nil,
+            home: "/Users/test",
+            processCwd: { _ in "/opt/project" },
+            isDirectory: { $0 == "/tmp" || $0 == "/opt/project" }
+        )
+        #expect(path == "/opt/project")
+    }
+
+    @Test func fallsBackToReportedPathWhenPidMissing() {
         let path = ProcessWorkingDirectory.resolve(
             reportedPath: "/tmp",
             shellPid: nil,
@@ -67,6 +79,18 @@ struct ProcessWorkingDirectoryTests {
             isDirectory: { $0 == "/alive" }
         )
         #expect(path == "/alive")
+    }
+
+    @Test func rejectsRelativeReportedPath() {
+        let path = ProcessWorkingDirectory.resolve(
+            reportedPath: "relative",
+            shellPid: nil,
+            foregroundPid: nil,
+            home: "/Users/test",
+            processCwd: { _ in nil },
+            isDirectory: ProcessWorkingDirectory.isUsableDirectory
+        )
+        #expect(path == "/Users/test")
     }
 
     @Test func cwdOfCurrentProcessMatchesFileManager() throws {

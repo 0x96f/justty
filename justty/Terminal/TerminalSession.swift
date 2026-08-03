@@ -346,9 +346,20 @@ extension TerminalSession: TerminalSurfaceBellDelegate {
 
 extension TerminalSession: TerminalSurfaceOpenURLDelegate {
     func terminalDidRequestOpenURL(_ url: String, kind _: TerminalOpenURLKind) {
-        guard let target = URL(string: url) else { return }
+        guard let target = Self.allowedOpenURL(url) else { return }
         NSWorkspace.shared.open(target)
     }
+
+    /// Only http(s) and mailto — reject file:// and custom handlers while sandbox is off.
+    static func allowedOpenURL(_ raw: String) -> URL? {
+        guard let target = URL(string: raw),
+              let scheme = target.scheme?.lowercased(),
+              Self.allowedURLSchemes.contains(scheme)
+        else { return nil }
+        return target
+    }
+
+    private static let allowedURLSchemes: Set<String> = ["http", "https", "mailto"]
 }
 
 extension TerminalSession: TerminalSurfacePwdDelegate {

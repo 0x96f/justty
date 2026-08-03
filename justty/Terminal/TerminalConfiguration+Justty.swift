@@ -17,8 +17,9 @@ enum JusttyTerminalConfig {
         fontSize: Double? = nil
     ) -> TerminalConfiguration {
         let settings = AppSettings.shared
-        let family = settings.fontFamily.isEmpty
-            ? TerminalFont.resolvedDefaultFamily : settings.fontFamily
+        let sanitized = TerminalFont.sanitizedFamily(settings.fontFamily)
+        let family = sanitized.isEmpty
+            ? TerminalFont.resolvedDefaultFamily : sanitized
         let resolvedSize = FontZoom.clamp(fontSize ?? settings.fontSize)
         return TerminalConfiguration { builder in
             builder.withFontFamily(family)
@@ -54,9 +55,11 @@ enum JusttyTerminalConfig {
             builder.withCustom("scrollback-limit", JusttyConstants.scrollbackLimit)
             builder.withCustom("macos-option-as-alt", "true")
             builder.withCustom("scrollbar", "never")
-            builder.withCustom("clipboard-read", "ask")
+            // Vendor confirmReadClipboard auto-approves, so "ask"/paste-protection
+            // would be a false sense of security. Deny OSC 52 reads until a real UI exists.
+            builder.withCustom("clipboard-read", "deny")
             builder.withCustom("clipboard-write", "allow")
-            builder.withCustom("clipboard-paste-protection", "true")
+            builder.withCustom("clipboard-paste-protection", "false")
         }
     }
 

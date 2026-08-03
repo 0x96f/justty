@@ -12,9 +12,10 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Select Xcode
         run: |
@@ -41,7 +42,7 @@ jobs:
             test
 
       # Same stable self-signed identity on every release so users can verify
-      # Authority=Justty Self-Signed. Generate secrets per docs/SIGNING.md.
+      # Authority + SHA-256 fingerprint. Generate secrets per docs/SIGNING.md.
       - name: Import signing certificate
         env:
           P12_BASE64: ${{ secrets.SIGNING_P12_BASE64 }}
@@ -84,6 +85,23 @@ jobs:
             echo "::error::Expected Authority=Justty Self-Signed"
             exit 1
           fi
+          # Pin leaf cert SHA-256 — CN alone is forgeable.
+          EXPECTED="829BF99FA6C3286498C35724043AF2CD714B35BDD1C288B7D886B6C2DDE22C11"
+          CERT_PREFIX="$RUNNER_TEMP/justty-codesign-cert"
+          codesign -d --extract-certificates="$CERT_PREFIX" "$APP"
+          LEAF="${CERT_PREFIX}0"
+          if [ ! -f "$LEAF" ]; then
+            echo "::error::Could not extract leaf certificate from app."
+            exit 1
+          fi
+          ACTUAL="$(openssl x509 -inform DER -in "$LEAF" -noout -fingerprint -sha256 \
+            | awk -F= '{print toupper($2)}' | tr -d ':')"
+          echo "Leaf SHA-256: $ACTUAL"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::Signing cert fingerprint mismatch (expected $EXPECTED)."
+            exit 1
+          fi
+          rm -f "${CERT_PREFIX}"*
 
       - name: Package
         run: |
@@ -109,13 +127,19 @@ jobs:
             exit 0
           fi
           VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+)*([.-][A-Za-z0-9]+)*$ ]]; then
+            echo "::error::Refusing cask bump: tag version '$VERSION' is not a safe semver-like string."
+            exit 1
+          fi
           SHA="$(shasum -a 256 Justty-macos.zip | awk '{print $1}')"
-          git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/0x96f/homebrew-justty.git" tap
+          git -c http.extraHeader="Authorization: Bearer ${TAP_TOKEN}" \
+            clone --depth 1 "https://github.com/0x96f/homebrew-justty.git" tap
           CASK_FILE="tap/Casks/justty.rb"
           if [ ! -f "$CASK_FILE" ]; then
             echo "::error::$CASK_FILE not found in tap."
             exit 1
           fi
+          # Use | delimiter so VERSION/SHA cannot break the sed expression.
           sed -i '' -E "s|^  version \".*\"|  version \"${VERSION}\"|" "$CASK_FILE"
           sed -i '' -E "s|^  sha256 \".*\"|  sha256 \"${SHA}\"|" "$CASK_FILE"
           cd tap
@@ -126,5 +150,5 @@ jobs:
             echo "No cask changes to commit."
           else
             git commit -m "justty ${VERSION}"
-            git push
+            git -c http.extraHeader="Authorization: Bearer ${TAP_TOKEN}" push
           fi
