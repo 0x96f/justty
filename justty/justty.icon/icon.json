@@ -1,18 +1,31 @@
 {
   "fill" : {
-    "solid" : "display-p3:0.14902,0.14118,0.15294,1.00000"
+    "linear-gradient" : [
+      "display-p3:0.22353,0.22353,0.22353,1.00000",
+      "display-p3:0.15294,0.15294,0.15294,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.7
+      }
+    }
   },
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "prompt.png",
-          "name" : "prompt",
+          "image-name" : "ghost.svg",
+          "name" : "ghost",
           "position" : {
-            "scale" : 1,
+            "scale" : 1.6,
             "translation-in-points" : [
               0,
-              -47.671875
+              0
             ]
           }
         }
@@ -28,6 +41,8 @@
     }
   ],
   "supported-platforms" : {
-    "squares" : "shared"
+    "squares" : [
+      "macOS"
+    ]
   }
 }
