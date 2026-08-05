@@ -409,7 +409,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 0.7.1;
+				MARKETING_VERSION = 0.7.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.0x96f.justty;
 				PRODUCT_NAME = Justty;
 				REGISTER_APP_GROUPS = YES;
@@ -442,7 +442,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 0.7.1;
+				MARKETING_VERSION = 0.7.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.0x96f.justty;
 				PRODUCT_NAME = Justty;
 				REGISTER_APP_GROUPS = YES;

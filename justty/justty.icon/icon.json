@@ -19,13 +19,13 @@
     {
       "layers" : [
         {
-          "image-name" : "ghost.svg",
-          "name" : "ghost",
+          "image-name" : "justty.svg",
+          "name" : "justty",
           "position" : {
-            "scale" : 1.6,
+            "scale" : 1.4,
             "translation-in-points" : [
-              0,
-              0
+              3.3732283441167965e-05,
+              -24.09375
             ]
           }
         }
