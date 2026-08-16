@@ -4,6 +4,7 @@
 //
 
 import CoreGraphics
+import Foundation
 import Testing
 @testable import Justty
 
@@ -45,5 +46,28 @@ struct WindowGeometryTests {
         )
         #expect(origin.x == visible.minX)
         #expect(origin.y == visible.maxY - frameSize.height)
+    }
+
+    @Test func contentSizeAddsVerticalTabRailWidth() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("justty-geom-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let url = dir.appendingPathComponent("config.yml")
+        let settings = AppSettings(configURL: url, persistDebounce: .zero)
+        let horizontal = WindowGeometry.contentSize(from: settings)
+        settings.verticalTabs = true
+        settings.verticalTabBarWidth = Int(JusttyConstants.verticalTabBarWidth)
+        let vertical = WindowGeometry.contentSize(from: settings)
+
+        #expect(
+            vertical.width == horizontal.width + CGFloat(settings.verticalTabBarWidth)
+        )
+        #expect(vertical.height == horizontal.height)
+
+        settings.verticalTabBarWidth = 240
+        let wider = WindowGeometry.contentSize(from: settings)
+        #expect(wider.width == horizontal.width + 240)
     }
 }

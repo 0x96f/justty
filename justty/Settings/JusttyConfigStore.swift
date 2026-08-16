@@ -149,6 +149,10 @@ struct JusttyConfigFile: Codable, Equatable {
     var confirmCloseRunningCommand: Bool
     /// When true, tab titles are prefixed with the cwd basename (`dir - node`).
     var showCwdInTabTitle: Bool
+    /// When true, tabs are shown in a left rail instead of a top strip.
+    var verticalTabs: Bool
+    /// Width of the vertical tab rail in points.
+    var verticalTabBarWidth: Int
 
     enum CodingKeys: String, CodingKey {
         case theme
@@ -156,6 +160,8 @@ struct JusttyConfigFile: Codable, Equatable {
         case window
         case confirmCloseRunningCommand = "confirm_close_running_command"
         case showCwdInTabTitle = "show_cwd_in_tab_title"
+        case verticalTabs = "vertical_tabs"
+        case verticalTabBarWidth = "vertical_tab_bar_width"
     }
 
     static var `default`: JusttyConfigFile {
@@ -164,7 +170,9 @@ struct JusttyConfigFile: Codable, Equatable {
             font: .default,
             window: .default,
             confirmCloseRunningCommand: AppSettings.Defaults.confirmCloseRunningCommand,
-            showCwdInTabTitle: AppSettings.Defaults.showCwdInTabTitle
+            showCwdInTabTitle: AppSettings.Defaults.showCwdInTabTitle,
+            verticalTabs: AppSettings.Defaults.verticalTabs,
+            verticalTabBarWidth: AppSettings.Defaults.verticalTabBarWidth
         )
     }
 
@@ -173,13 +181,17 @@ struct JusttyConfigFile: Codable, Equatable {
         font: Font,
         window: Window,
         confirmCloseRunningCommand: Bool = AppSettings.Defaults.confirmCloseRunningCommand,
-        showCwdInTabTitle: Bool = AppSettings.Defaults.showCwdInTabTitle
+        showCwdInTabTitle: Bool = AppSettings.Defaults.showCwdInTabTitle,
+        verticalTabs: Bool = AppSettings.Defaults.verticalTabs,
+        verticalTabBarWidth: Int = AppSettings.Defaults.verticalTabBarWidth
     ) {
         self.theme = theme
         self.font = font
         self.window = window
         self.confirmCloseRunningCommand = confirmCloseRunningCommand
         self.showCwdInTabTitle = showCwdInTabTitle
+        self.verticalTabs = verticalTabs
+        self.verticalTabBarWidth = verticalTabBarWidth
     }
 
     init(from decoder: Decoder) throws {
@@ -196,6 +208,14 @@ struct JusttyConfigFile: Codable, Equatable {
             Bool.self,
             forKey: .showCwdInTabTitle
         ) ?? defaults.showCwdInTabTitle
+        verticalTabs = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .verticalTabs
+        ) ?? defaults.verticalTabs
+        verticalTabBarWidth = try container.decodeIfPresent(
+            Int.self,
+            forKey: .verticalTabBarWidth
+        ) ?? defaults.verticalTabBarWidth
     }
 }
 

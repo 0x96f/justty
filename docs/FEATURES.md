@@ -5,7 +5,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 ## Windows & tabs
 
 - **New window** - ⌘N opens another main window.
-- **Tab bar** - Titles, per-tab close, **+** (new tab), gear (Settings). Overflowing tabs scroll with left/right arrows (and stay clear of the trailing buttons). Empty chrome is draggable (hidden title bar); double-click zooms the window.
+- **Tab bar** - Titles, per-tab close, **+** (new tab), gear (Settings). Overflowing tabs scroll with left/right arrows (and stay clear of the trailing buttons). Empty chrome is draggable (hidden title bar); double-click zooms the window. Toggle **Vertical tabs** in Settings → Window for a full-height left rail under the traffic lights (drag the trailing edge to resize; width persists in `config.yml`). Content column keeps a top strip with a sidebar show/hide control, drag, **+**, and Settings.
 - **Shortcuts** - ⌘T new tab, ⌘W close tab, ⌘⇧] / ⌘⇧[ next / previous tab, ⌘⇧← / ⌘⇧→ move tab left / right.
 - **Titles** - Tab titles show the foreground command basename (e.g. `node` for `node index.js`), or a program OSC title while that command is running (e.g. Cursor Agent), and the login shell when idle. By default titles are prefixed with the cwd basename (`dir - node` / `dir - zsh`); toggle in Settings → Window.
 - **New tab directory** - ⌘T / **+** open in the active tab’s working directory (usually the shell process cwd; OSC 7 when the shell emits it). New windows and replacement tabs after shell exit start in `$HOME`.
@@ -30,7 +30,7 @@ Open with ⌘, or the tab-bar gear. Values persist in `~/.config/justty/config.y
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Theme**              | GhosttyTheme catalog, grouped Light / Dark. Defaults: GitHub Light Default / GitHub Dark Default.                                                                   |
 | **Font**               | Family (System or detected monospace), size 8–32 px (default 13), line height 0.8–2.0×, weight Regular / Medium / Semibold / Bold.                                  |
-| **Window**             | Confirm before closing tabs with a running command (default on); padding 0–64 px; starting X×Y from the top-left of the main screen (clamped to the visible frame); size as character grid (cols 20–500, rows 5–200; default 80×24). |
+| **Window**             | Confirm before closing tabs with a running command (default on); show directory in tab titles (default on); vertical tabs (default off); padding 0–64 px; starting X×Y from the top-left of the main screen (clamped to the visible frame); size as character grid (cols 20–500, rows 5–200; default 80×24). |
 | **Keyboard Shortcuts** | Opens a read-only sheet (same list as below).                                                                                                                       |
 | **Configuration**      | **Open Configuration…** opens `config.yml` in the default text editor (Ghostty-style).                                                                              |
 

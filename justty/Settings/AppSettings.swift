@@ -28,6 +28,8 @@ final class AppSettings: ObservableObject {
         static let windowRows = 24
         static let confirmCloseRunningCommand = true
         static let showCwdInTabTitle = true
+        static let verticalTabs = false
+        static let verticalTabBarWidth = Int(JusttyConstants.verticalTabBarWidth)
     }
 
     enum Limits {
@@ -37,6 +39,8 @@ final class AppSettings: ObservableObject {
         static let windowOrigin = 0...10_000
         static let windowColumns = 20...500
         static let windowRows = 5...200
+        static let verticalTabBarWidth =
+            Int(JusttyConstants.verticalTabBarMinWidth)...Int(JusttyConstants.verticalTabBarMaxWidth)
     }
 
     @Published var theme: String {
@@ -160,6 +164,27 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    @Published var verticalTabs: Bool {
+        didSet {
+            guard !isLoading else { return }
+            persistAndNotify()
+        }
+    }
+
+    /// Sidebar width in points when vertical tabs are on. Layout-only — persists
+    /// without posting `.justtySettingsDidChange` so terminals are not rebuilt.
+    @Published var verticalTabBarWidth: Int {
+        didSet {
+            guard !isLoading else { return }
+            let clamped = Self.clamp(verticalTabBarWidth, to: Limits.verticalTabBarWidth)
+            if clamped != verticalTabBarWidth {
+                verticalTabBarWidth = clamped
+                return
+            }
+            schedulePersist()
+        }
+    }
+
     /// True while seeding properties from disk so didSet side effects
     /// (including `NSApp`, which is still nil during `App.init`) do not run.
     private var isLoading = true
@@ -188,6 +213,8 @@ final class AppSettings: ObservableObject {
         windowRows = Defaults.windowRows
         confirmCloseRunningCommand = Defaults.confirmCloseRunningCommand
         showCwdInTabTitle = Defaults.showCwdInTabTitle
+        verticalTabs = Defaults.verticalTabs
+        verticalTabBarWidth = Defaults.verticalTabBarWidth
 
         apply(Self.loadOrCreate(at: configURL))
         Theme.reloadSelection(theme)
@@ -253,6 +280,11 @@ final class AppSettings: ObservableObject {
         windowRows = Self.clamp(config.window.rows, to: Limits.windowRows)
         confirmCloseRunningCommand = config.confirmCloseRunningCommand
         showCwdInTabTitle = config.showCwdInTabTitle
+        verticalTabs = config.verticalTabs
+        verticalTabBarWidth = Self.clamp(
+            config.verticalTabBarWidth,
+            to: Limits.verticalTabBarWidth
+        )
     }
 
     private func persistAndNotify() {
@@ -327,7 +359,9 @@ final class AppSettings: ObservableObject {
                 rows: windowRows
             ),
             confirmCloseRunningCommand: confirmCloseRunningCommand,
-            showCwdInTabTitle: showCwdInTabTitle
+            showCwdInTabTitle: showCwdInTabTitle,
+            verticalTabs: verticalTabs,
+            verticalTabBarWidth: verticalTabBarWidth
         )
     }
 

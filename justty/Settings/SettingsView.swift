@@ -87,6 +87,11 @@ struct SettingsView: View {
                     isOn: $settings.showCwdInTabTitle
                 )
 
+                Toggle(
+                    "Vertical tabs",
+                    isOn: $settings.verticalTabs
+                )
+
                 LabeledContent("Padding") {
                     HStack(spacing: 4) {
                         TextField(

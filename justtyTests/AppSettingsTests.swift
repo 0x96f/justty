@@ -37,6 +37,8 @@ struct AppSettingsTests {
         #expect(settings.windowRows == AppSettings.Defaults.windowRows)
         #expect(settings.confirmCloseRunningCommand == AppSettings.Defaults.confirmCloseRunningCommand)
         #expect(settings.showCwdInTabTitle == AppSettings.Defaults.showCwdInTabTitle)
+        #expect(settings.verticalTabs == AppSettings.Defaults.verticalTabs)
+        #expect(settings.verticalTabBarWidth == AppSettings.Defaults.verticalTabBarWidth)
         #expect(settings.fontSize == Double(TerminalFont.defaultSize))
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
@@ -333,5 +335,105 @@ struct AppSettingsTests {
 
         settings.reloadFromDisk()
         #expect(settings.showCwdInTabTitle == false)
+    }
+
+    @Test func verticalTabsDefaultsFalse() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.verticalTabs == false)
+        #expect(AppSettings.Defaults.verticalTabs == false)
+    }
+
+    @Test func missingVerticalTabsKeyDefaultsToFalse() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        try """
+        theme: GitHub Dark Default
+        window:
+          padding: 8
+        """.write(to: url, atomically: true, encoding: .utf8)
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.verticalTabs == false)
+    }
+
+    @Test func verticalTabsPersistsAndReloads() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        settings.verticalTabs = true
+
+        let yaml = try String(contentsOf: url, encoding: .utf8)
+        #expect(yaml.contains("vertical_tabs: true"))
+
+        let loaded = try JusttyConfigStore.load(from: url)
+        #expect(loaded.verticalTabs == true)
+
+        var config = JusttyConfigFile.default
+        config.verticalTabs = false
+        try JusttyConfigStore.save(config, to: url)
+
+        settings.reloadFromDisk()
+        #expect(settings.verticalTabs == false)
+    }
+
+    @Test func verticalTabBarWidthDefaultsToConstant() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.verticalTabBarWidth == Int(JusttyConstants.verticalTabBarWidth))
+        #expect(AppSettings.Defaults.verticalTabBarWidth == Int(JusttyConstants.verticalTabBarWidth))
+    }
+
+    @Test func missingVerticalTabBarWidthKeyDefaults() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        try """
+        theme: GitHub Dark Default
+        window:
+          padding: 8
+        """.write(to: url, atomically: true, encoding: .utf8)
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.verticalTabBarWidth == AppSettings.Defaults.verticalTabBarWidth)
+    }
+
+    @Test func verticalTabBarWidthClampsToLimits() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        settings.verticalTabBarWidth = 10
+        #expect(settings.verticalTabBarWidth == AppSettings.Limits.verticalTabBarWidth.lowerBound)
+
+        settings.verticalTabBarWidth = 10_000
+        #expect(settings.verticalTabBarWidth == AppSettings.Limits.verticalTabBarWidth.upperBound)
+    }
+
+    @Test func verticalTabBarWidthPersistsAndReloads() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        settings.verticalTabBarWidth = 240
+
+        let yaml = try String(contentsOf: url, encoding: .utf8)
+        #expect(yaml.contains("vertical_tab_bar_width: 240"))
+
+        let loaded = try JusttyConfigStore.load(from: url)
+        #expect(loaded.verticalTabBarWidth == 240)
+
+        var config = JusttyConfigFile.default
+        config.verticalTabBarWidth = 160
+        try JusttyConfigStore.save(config, to: url)
+
+        settings.reloadFromDisk()
+        #expect(settings.verticalTabBarWidth == 160)
     }
 }

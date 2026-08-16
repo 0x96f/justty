@@ -9,13 +9,16 @@ import AppKit
 /// top-left screen origins into Cocoa window frames.
 @MainActor
 enum WindowGeometry {
-    /// Point size for a new window's content area (tab bar + padded terminal).
+    /// Point size for a new window's content area (chrome + padded terminal).
     static func contentSize(from settings: AppSettings? = nil) -> CGSize {
         // Resolve .shared in the @MainActor body — default args are nonisolated.
         let settings = settings ?? .shared
         let cell = estimatedCellSize(from: settings)
         let padding = CGFloat(settings.terminalPadding) * 2
-        let width = CGFloat(settings.windowColumns) * cell.width + padding
+        let chromeWidth = settings.verticalTabs
+            ? CGFloat(settings.verticalTabBarWidth)
+            : 0
+        let width = CGFloat(settings.windowColumns) * cell.width + padding + chromeWidth
         let height = JusttyConstants.tabBarHeight
             + CGFloat(settings.windowRows) * cell.height
             + padding

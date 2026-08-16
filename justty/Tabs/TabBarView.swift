@@ -24,7 +24,7 @@ struct TabBarView: View {
                 .frame(width: JusttyConstants.trafficLightsLeadingInset)
 
             if overflows {
-                tabScrollButton(
+                TabStripScrollButton(
                     systemName: "chevron.left",
                     help: "Scroll Tabs Left",
                     enabled: canScrollLeft
@@ -39,6 +39,7 @@ struct TabBarView: View {
                         TabItemView(
                             session: session,
                             isSelected: session.id == tabs.selectedID,
+                            fillsWidth: false,
                             onSelect: { tabs.select(session.id) },
                             onClose: { tabs.close(session) }
                         )
@@ -60,31 +61,29 @@ struct TabBarView: View {
                 maxWidth: overflows ? .infinity : (contentWidth > 0 ? contentWidth : .infinity),
                 alignment: .leading
             )
-            .onScrollGeometryChange(for: TabScrollFlags.self) { geometry in
+            .onScrollGeometryChange(for: TabStripScrollFlags.self) { geometry in
                 let offset = geometry.contentOffset.x
                 let content = geometry.contentSize.width
                 let viewport = geometry.containerSize.width
                 metrics.offset = offset
-                metrics.contentWidth = content
-                metrics.viewportWidth = viewport
-                let overflows = content > viewport + 0.5
-                return TabScrollFlags(
-                    overflows: overflows,
-                    canScrollLeft: overflows && offset > 0.5,
-                    canScrollRight: overflows && offset < content - viewport - 0.5,
-                    contentWidth: content
+                metrics.contentLength = content
+                metrics.viewportLength = viewport
+                return TabStripScroll.flags(
+                    offset: offset,
+                    contentLength: content,
+                    viewportLength: viewport
                 )
             } action: { _, new in
                 overflows = new.overflows
-                canScrollLeft = new.canScrollLeft
-                canScrollRight = new.canScrollRight
-                if abs(contentWidth - new.contentWidth) > 0.5 {
-                    contentWidth = new.contentWidth
+                canScrollLeft = new.canScrollBackward
+                canScrollRight = new.canScrollForward
+                if abs(contentWidth - new.contentLength) > 0.5 {
+                    contentWidth = new.contentLength
                 }
             }
 
             if overflows {
-                tabScrollButton(
+                TabStripScrollButton(
                     systemName: "chevron.right",
                     help: "Scroll Tabs Right",
                     enabled: canScrollRight
@@ -143,84 +142,9 @@ struct TabBarView: View {
     }
 
     private func scrollTabs(by direction: CGFloat) {
-        let page = max(metrics.viewportWidth * 0.75, 80)
-        let maxOffset = max(0, metrics.contentWidth - metrics.viewportWidth)
-        let target = min(max(0, metrics.offset + direction * page), maxOffset)
+        let target = TabStripScroll.pageTarget(direction: direction, metrics: metrics)
         withAnimation(.easeInOut(duration: 0.15)) {
             scrollPosition.scrollTo(x: target)
-        }
-    }
-
-    private func tabScrollButton(
-        systemName: String,
-        help: String,
-        enabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 11, weight: .semibold))
-                .frame(width: 28, height: 24)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .opacity(enabled ? 0.85 : 0.35)
-        .help(help)
-    }
-}
-
-/// Mutable scroll metrics read by arrow actions without publishing every frame.
-private final class TabStripMetrics {
-    var offset: CGFloat = 0
-    var contentWidth: CGFloat = 0
-    var viewportWidth: CGFloat = 0
-}
-
-private struct TabScrollFlags: Equatable {
-    var overflows: Bool
-    var canScrollLeft: Bool
-    var canScrollRight: Bool
-    var contentWidth: CGFloat
-}
-
-private struct TabItemView: View {
-    @ObservedObject var session: TerminalSession
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onClose: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(session.title)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                // minWidth 0 lets the label shrink under the chip max instead of resisting truncation.
-                .frame(minWidth: 0, alignment: .leading)
-
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .semibold))
-                    .frame(width: 14, height: 14)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .opacity(isSelected ? 0.7 : 0.45)
-            .help("Close Tab")
-        }
-        .font(.system(size: 12))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .frame(maxWidth: JusttyConstants.maxTabWidth, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
-        )
-        .contentShape(Rectangle())
-        .help(session.title)
-        .onTapGesture(perform: onSelect)
-        .contextMenu {
-            Button("Close Tab", action: onClose)
         }
     }
 }

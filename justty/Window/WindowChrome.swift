@@ -47,10 +47,14 @@ struct WindowChromeConfigurator: NSViewRepresentable {
 
     private static func configure(_ window: NSWindow?) {
         guard let window else { return }
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        window.styleMask.insert(.fullSizeContentView)
-        window.toolbar = nil
+
+        if !window.justtyDidApplyChromeStyle {
+            window.justtyDidApplyChromeStyle = true
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.styleMask.insert(.fullSizeContentView)
+            window.toolbar = nil
+        }
 
         // One-shot: starting geometry from settings applies only to new windows.
         if window.justtyDidApplyInitialGeometry { return }
@@ -61,6 +65,7 @@ struct WindowChromeConfigurator: NSViewRepresentable {
 
 private extension NSWindow {
     private static var initialGeometryKey: UInt8 = 0
+    private static var chromeStyleKey: UInt8 = 1
 
     var justtyDidApplyInitialGeometry: Bool {
         get {
@@ -70,6 +75,20 @@ private extension NSWindow {
             objc_setAssociatedObject(
                 self,
                 &Self.initialGeometryKey,
+                newValue,
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+
+    var justtyDidApplyChromeStyle: Bool {
+        get {
+            (objc_getAssociatedObject(self, &Self.chromeStyleKey) as? Bool) ?? false
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &Self.chromeStyleKey,
                 newValue,
                 .OBJC_ASSOCIATION_RETAIN_NONATOMIC
             )
