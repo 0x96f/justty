@@ -403,13 +403,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = justty/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = JusTTY;
+				INFOPLIST_KEY_CFBundleDisplayName = Justty;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 0.8.1;
+				MARKETING_VERSION = 0.8.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.0x96f.justty;
 				PRODUCT_NAME = Justty;
 				REGISTER_APP_GROUPS = YES;
@@ -436,13 +436,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = justty/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = JusTTY;
+				INFOPLIST_KEY_CFBundleDisplayName = Justty;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 0.8.1;
+				MARKETING_VERSION = 0.8.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.0x96f.justty;
 				PRODUCT_NAME = Justty;
 				REGISTER_APP_GROUPS = YES;
