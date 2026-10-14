@@ -112,6 +112,16 @@ private struct JusttyCommands: Commands {
         }
 
         CommandMenu("View") {
+            Button("Toggle Sidebar") {
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    tabs?.toggleSidebar()
+                }
+            }
+            .keyboardShortcut("s", modifiers: [.command, .shift])
+            .disabled(tabs == nil)
+
+            Divider()
+
             Button("Larger") {
                 tabs?.increaseFontSize()
             }

@@ -22,7 +22,7 @@ struct TopChromeBar: View {
 
             Button {
                 withAnimation(.easeInOut(duration: 0.22)) {
-                    isSidebarVisible.toggle()
+                    tabs.toggleSidebar()
                 }
             } label: {
                 Image(systemName: "sidebar.left")

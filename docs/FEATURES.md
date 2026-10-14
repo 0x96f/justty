@@ -50,6 +50,7 @@ Source of truth: `justty/Settings/ShortcutsCatalog.swift` (also drives Ghostty t
 | Move Tab Left     | ⌘⇧←  |
 | Move Tab Right    | ⌘⇧→  |
 | Find              | ⌘F   |
+| Toggle Sidebar    | ⌘⇧S  |
 | Larger            | ⌘+   |
 | Smaller           | ⌘−   |
 | Actual Size       | ⌘0   |

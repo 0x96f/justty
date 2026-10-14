@@ -11,6 +11,7 @@ import Foundation
 final class TabManager: ObservableObject {
     @Published private(set) var sessions: [TerminalSession] = []
     @Published private(set) var selectedID: TerminalSession.ID?
+    @Published var isSidebarVisible = true
     @Published private(set) var isFindPresented = false
     @Published private(set) var findQuery = ""
     /// Bumped when Find should re-focus the query field (e.g. ⌘F while already open).
@@ -217,6 +218,11 @@ final class TabManager: ObservableObject {
 
     func resetFontSize() {
         selectedSession?.resetFontSize()
+    }
+
+    func toggleSidebar() {
+        guard AppSettings.shared.verticalTabs else { return }
+        isSidebarVisible.toggle()
     }
 
     // MARK: - Find

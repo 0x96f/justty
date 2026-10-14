@@ -35,6 +35,7 @@ enum ShortcutsCatalog {
                 Item(id: "move-tab-left", title: "Move Tab Left", keys: "⌘⇧←", ghosttyKeybind: nil),
                 Item(id: "move-tab-right", title: "Move Tab Right", keys: "⌘⇧→", ghosttyKeybind: nil),
                 Item(id: "find", title: "Find", keys: "⌘F", ghosttyKeybind: nil),
+                Item(id: "toggle-sidebar", title: "Toggle Sidebar", keys: "⌘⇧S", ghosttyKeybind: nil),
                 Item(id: "larger", title: "Larger", keys: "⌘+", ghosttyKeybind: nil),
                 Item(id: "smaller", title: "Smaller", keys: "⌘−", ghosttyKeybind: nil),
                 Item(id: "actual-size", title: "Actual Size", keys: "⌘0", ghosttyKeybind: nil),

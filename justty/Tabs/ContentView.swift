@@ -8,7 +8,6 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var tabs: TabManager
     @ObservedObject private var settings = AppSettings.shared
-    @State private var isSidebarVisible = true
 
     var body: some View {
         Group {
@@ -32,9 +31,9 @@ struct ContentView: View {
 
     private var verticalLayout: some View {
         HStack(spacing: 0) {
-            VerticalTabStrip(tabs: tabs, isVisible: isSidebarVisible)
+            VerticalTabStrip(tabs: tabs, isVisible: tabs.isSidebarVisible)
             VStack(spacing: 0) {
-                TopChromeBar(tabs: tabs, isSidebarVisible: $isSidebarVisible)
+                TopChromeBar(tabs: tabs, isSidebarVisible: $tabs.isSidebarVisible)
                 terminalColumn
             }
             // Allow the terminal column to shrink instead of proposing negative sizes
