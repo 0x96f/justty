@@ -20,7 +20,7 @@ Justty is a minimal native macOS terminal (SwiftUI + [libghostty](https://github
 - **URLs** - Terminal URL requests open in the default browser.
 - **Find** - ⌘F opens a thin find bar; matches are highlighted in scrollback via Ghostty search. Next/previous from the bar; Esc closes.
 - **Font zoom** - ⌘+ / ⌘− change the active tab’s size temporarily; ⌘0 resets to the Settings font size. Changing Settings (or Reload Configuration) also clears zoom and applies the new Settings size (not written to `config.yml`).
-- **Theme chrome** - Window / tab bar background and app appearance follow the selected color theme.
+- **Theme chrome** - Window / tab bar background and app appearance follow the selected appearance and its theme.
 
 ## Settings
 
@@ -28,7 +28,7 @@ Open with ⌘, or the tab-bar gear. Values persist in `~/.config/justty/config.y
 
 | Section                | Controls                                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Theme**              | GhosttyTheme catalog, grouped Light / Dark. Defaults: GitHub Light Default / GitHub Dark Default.                                                                   |
+| **Theme**              | Appearance picker for Light / Dark, plus a theme picker filtered to that section. Justty remembers separate Light and Dark selections. Defaults: GitHub Light Default / GitHub Dark Default. |
 | **Font**               | Family (System or detected monospace), size 8–32 px (default 13), line height 0.8–2.0×, weight Regular / Medium / Semibold / Bold.                                  |
 | **Window**             | Confirm before closing tabs with a running command (default on); show directory in tab titles (default on); vertical tabs (default off); padding 0–64 px; starting X×Y from the top-left of the main screen (clamped to the visible frame); size as character grid (cols 20–500, rows 5–200; default 80×24). |
 | **Keyboard Shortcuts** | Opens a read-only sheet (same list as below).                                                                                                                       |

@@ -12,16 +12,15 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Theme") {
-                Picker("Theme", selection: $settings.theme) {
-                    Section("Light") {
-                        ForEach(Theme.lightThemeNames, id: \.self) { name in
-                            Text(name).tag(name)
-                        }
+                Picker("Appearance", selection: $settings.themeMode) {
+                    ForEach(ThemeMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
                     }
-                    Section("Dark") {
-                        ForEach(Theme.darkThemeNames, id: \.self) { name in
-                            Text(name).tag(name)
-                        }
+                }
+
+                Picker("Theme", selection: selectedThemeBinding) {
+                    ForEach(themeNames, id: \.self) { name in
+                        Text(name).tag(name)
                     }
                 }
             }
@@ -178,5 +177,24 @@ struct SettingsView: View {
         .sheet(isPresented: $showingShortcuts) {
             ShortcutsView()
         }
+    }
+
+    private var selectedThemeBinding: Binding<String> {
+        Binding(
+            get: {
+                settings.themeMode == .dark ? settings.darkTheme : settings.lightTheme
+            },
+            set: { newValue in
+                if settings.themeMode == .dark {
+                    settings.darkTheme = newValue
+                } else {
+                    settings.lightTheme = newValue
+                }
+            }
+        )
+    }
+
+    private var themeNames: [String] {
+        settings.themeMode == .dark ? Theme.darkThemeNames : Theme.lightThemeNames
     }
 }

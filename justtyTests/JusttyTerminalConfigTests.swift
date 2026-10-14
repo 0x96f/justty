@@ -3,6 +3,7 @@
 //  justtyTests
 //
 
+import GhosttyTerminal
 import Testing
 @testable import Justty
 
@@ -26,5 +27,16 @@ struct JusttyTerminalConfigTests {
         #expect(command.contains("/tmp/it"))
         #expect(command.contains("\\'"))
         #expect(command.hasSuffix(" -l'"))
+    }
+
+    @Test func ghosttyThemeKeepsSeparateLightAndDarkSlots() {
+        Theme.reloadSelection(
+            themeMode: .dark,
+            lightThemeName: Theme.defaultLightThemeName,
+            darkThemeName: Theme.defaultDarkThemeName
+        )
+
+        let theme = JusttyTerminalConfig.ghosttyTheme()
+        #expect(theme.light != theme.dark)
     }
 }

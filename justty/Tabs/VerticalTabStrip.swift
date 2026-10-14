@@ -127,7 +127,7 @@ struct VerticalTabStrip: View {
         }
         .background {
             sidebarFill
-                .id(settings.theme)
+                .id(settings.themeRefreshID)
         }
         .frame(width: displayedWidth)
         .frame(minHeight: 0, maxHeight: .infinity)

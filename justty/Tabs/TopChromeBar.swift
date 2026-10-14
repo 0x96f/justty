@@ -64,7 +64,7 @@ struct TopChromeBar: View {
         .background {
             ZStack {
                 Theme.backgroundColor
-                    .id(settings.theme)
+                    .id(settings.themeRefreshID)
                 WindowDragRegion()
             }
         }

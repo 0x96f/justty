@@ -142,7 +142,9 @@ struct JusttyConfigFile: Codable, Equatable {
         }
     }
 
-    var theme: String
+    var themeMode: ThemeMode
+    var lightTheme: String
+    var darkTheme: String
     var font: Font
     var window: Window
     /// When true, closing a tab with a foreground process prompts for confirmation.
@@ -154,8 +156,29 @@ struct JusttyConfigFile: Codable, Equatable {
     /// Width of the vertical tab rail in points.
     var verticalTabBarWidth: Int
 
+    /// Backward-compatible active theme view used by older callers and tests.
+    var theme: String {
+        get { themeMode == .dark ? darkTheme : lightTheme }
+        set {
+            switch Theme.mode(named: newValue) {
+            case .light:
+                themeMode = .light
+                lightTheme = Theme.resolvedName(newValue, for: .light)
+            case .dark:
+                themeMode = .dark
+                darkTheme = Theme.resolvedName(newValue, for: .dark)
+            case nil:
+                themeMode = .dark
+                darkTheme = Theme.defaultDarkThemeName
+            }
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case theme
+        case themeMode = "theme_mode"
+        case lightTheme = "light_theme"
+        case darkTheme = "dark_theme"
         case font
         case window
         case confirmCloseRunningCommand = "confirm_close_running_command"
@@ -166,7 +189,9 @@ struct JusttyConfigFile: Codable, Equatable {
 
     static var `default`: JusttyConfigFile {
         JusttyConfigFile(
-            theme: Theme.defaultDarkThemeName,
+            themeMode: .dark,
+            lightTheme: Theme.defaultLightThemeName,
+            darkTheme: Theme.defaultDarkThemeName,
             font: .default,
             window: .default,
             confirmCloseRunningCommand: AppSettings.Defaults.confirmCloseRunningCommand,
@@ -177,7 +202,9 @@ struct JusttyConfigFile: Codable, Equatable {
     }
 
     init(
-        theme: String,
+        themeMode: ThemeMode,
+        lightTheme: String,
+        darkTheme: String,
         font: Font,
         window: Window,
         confirmCloseRunningCommand: Bool = AppSettings.Defaults.confirmCloseRunningCommand,
@@ -185,7 +212,9 @@ struct JusttyConfigFile: Codable, Equatable {
         verticalTabs: Bool = AppSettings.Defaults.verticalTabs,
         verticalTabBarWidth: Int = AppSettings.Defaults.verticalTabBarWidth
     ) {
-        self.theme = theme
+        self.themeMode = themeMode
+        self.lightTheme = Theme.resolvedName(lightTheme, for: .light)
+        self.darkTheme = Theme.resolvedName(darkTheme, for: .dark)
         self.font = font
         self.window = window
         self.confirmCloseRunningCommand = confirmCloseRunningCommand
@@ -197,7 +226,29 @@ struct JusttyConfigFile: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let defaults = JusttyConfigFile.default
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        theme = try container.decodeIfPresent(String.self, forKey: .theme) ?? defaults.theme
+        let legacyTheme = try container.decodeIfPresent(String.self, forKey: .theme)
+        let decodedMode = try container.decodeIfPresent(String.self, forKey: .themeMode)
+            .flatMap(ThemeMode.init(rawValue:))
+
+        themeMode = decodedMode ?? Theme.mode(named: legacyTheme) ?? defaults.themeMode
+        lightTheme = Theme.resolvedName(
+            try container.decodeIfPresent(String.self, forKey: .lightTheme),
+            for: .light
+        )
+        darkTheme = Theme.resolvedName(
+            try container.decodeIfPresent(String.self, forKey: .darkTheme),
+            for: .dark
+        )
+
+        if let legacyTheme, Theme.mode(named: legacyTheme) == .light,
+           !container.contains(.lightTheme) {
+            lightTheme = Theme.resolvedName(legacyTheme, for: .light)
+        }
+        if let legacyTheme, Theme.mode(named: legacyTheme) == .dark,
+           !container.contains(.darkTheme) {
+            darkTheme = Theme.resolvedName(legacyTheme, for: .dark)
+        }
+
         font = try container.decodeIfPresent(Font.self, forKey: .font) ?? defaults.font
         window = try container.decodeIfPresent(Window.self, forKey: .window) ?? defaults.window
         confirmCloseRunningCommand = try container.decodeIfPresent(
@@ -216,6 +267,19 @@ struct JusttyConfigFile: Codable, Equatable {
             Int.self,
             forKey: .verticalTabBarWidth
         ) ?? defaults.verticalTabBarWidth
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(themeMode.rawValue, forKey: .themeMode)
+        try container.encode(lightTheme, forKey: .lightTheme)
+        try container.encode(darkTheme, forKey: .darkTheme)
+        try container.encode(font, forKey: .font)
+        try container.encode(window, forKey: .window)
+        try container.encode(confirmCloseRunningCommand, forKey: .confirmCloseRunningCommand)
+        try container.encode(showCwdInTabTitle, forKey: .showCwdInTabTitle)
+        try container.encode(verticalTabs, forKey: .verticalTabs)
+        try container.encode(verticalTabBarWidth, forKey: .verticalTabBarWidth)
     }
 }
 

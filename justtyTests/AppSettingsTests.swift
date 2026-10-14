@@ -30,6 +30,10 @@ struct AppSettingsTests {
         defer { cleanup(url) }
 
         let settings = makeSettings(configURL: url)
+        #expect(settings.themeMode == .dark)
+        #expect(settings.lightTheme == Theme.defaultLightThemeName)
+        #expect(settings.darkTheme == Theme.defaultDarkThemeName)
+        #expect(settings.theme == Theme.defaultDarkThemeName)
         #expect(settings.terminalPadding == AppSettings.Defaults.terminalPadding)
         #expect(settings.windowOriginX == AppSettings.Defaults.windowOriginX)
         #expect(settings.windowOriginY == AppSettings.Defaults.windowOriginY)
@@ -230,6 +234,8 @@ struct AppSettingsTests {
         """.write(to: url, atomically: true, encoding: .utf8)
 
         let settings = makeSettings(configURL: url)
+        #expect(settings.themeMode == .dark)
+        #expect(settings.darkTheme == "GitHub Dark Default")
         #expect(settings.theme == "GitHub Dark Default")
         #expect(settings.terminalPadding == 16)
         #expect(settings.fontSize == Double(TerminalFont.defaultSize))
@@ -247,6 +253,55 @@ struct AppSettingsTests {
         #expect(settings.theme == Theme.defaultDarkThemeName)
         #expect(settings.terminalPadding == AppSettings.Defaults.terminalPadding)
         #expect(settings.windowColumns == AppSettings.Defaults.windowColumns)
+    }
+
+    @Test func separatedThemesPersistAndReload() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        let settings = makeSettings(configURL: url)
+        let light = Theme.lightThemeNames.first ?? Theme.defaultLightThemeName
+        let dark = Theme.darkThemeNames.first ?? Theme.defaultDarkThemeName
+        settings.lightTheme = light
+        settings.darkTheme = dark
+        settings.themeMode = .light
+
+        let yaml = try String(contentsOf: url, encoding: .utf8)
+        #expect(yaml.contains("theme_mode: light"))
+        #expect(yaml.contains("light_theme: \(light)"))
+        #expect(yaml.contains("dark_theme: \(dark)"))
+
+        let loaded = try JusttyConfigStore.load(from: url)
+        #expect(loaded.themeMode == .light)
+        #expect(loaded.lightTheme == light)
+        #expect(loaded.darkTheme == dark)
+
+        var config = JusttyConfigFile.default
+        config.themeMode = .dark
+        config.lightTheme = Theme.defaultLightThemeName
+        config.darkTheme = Theme.defaultDarkThemeName
+        try JusttyConfigStore.save(config, to: url)
+
+        settings.reloadFromDisk()
+        #expect(settings.themeMode == .dark)
+        #expect(settings.lightTheme == Theme.defaultLightThemeName)
+        #expect(settings.darkTheme == Theme.defaultDarkThemeName)
+        #expect(settings.theme == Theme.defaultDarkThemeName)
+    }
+
+    @Test func legacyThemeKeyMigratesToMatchingMode() throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+
+        try """
+        theme: GitHub Light Default
+        """.write(to: url, atomically: true, encoding: .utf8)
+
+        let settings = makeSettings(configURL: url)
+        #expect(settings.themeMode == .light)
+        #expect(settings.lightTheme == Theme.defaultLightThemeName)
+        #expect(settings.darkTheme == Theme.defaultDarkThemeName)
+        #expect(settings.theme == Theme.defaultLightThemeName)
     }
 
     @Test func confirmCloseRunningCommandDefaultsTrue() throws {

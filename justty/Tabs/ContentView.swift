@@ -17,7 +17,7 @@ struct ContentView: View {
                 horizontalLayout
             }
         }
-        .background(Theme.backgroundColor.id(settings.theme))
+        .background(Theme.backgroundColor.id(settings.themeRefreshID))
         .ignoresSafeArea(.container, edges: .top)
         .background(WindowChromeConfigurator())
     }

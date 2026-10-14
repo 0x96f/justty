@@ -64,9 +64,10 @@ enum JusttyTerminalConfig {
     }
 
     static func ghosttyTheme() -> GhosttyTerminal.TerminalTheme {
-        let config = Theme.terminal().toTerminalConfiguration()
-        // API requires both slots; the host always uses the same chosen theme.
-        return GhosttyTerminal.TerminalTheme(light: config, dark: config)
+        GhosttyTerminal.TerminalTheme(
+            light: Theme.lightTerminal().toTerminalConfiguration(),
+            dark: Theme.darkTerminal().toTerminalConfiguration()
+        )
     }
 
     static func surfaceEnvironment() -> [String: String] {

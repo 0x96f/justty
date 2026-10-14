@@ -43,13 +43,43 @@ final class AppSettings: ObservableObject {
             Int(JusttyConstants.verticalTabBarMinWidth)...Int(JusttyConstants.verticalTabBarMaxWidth)
     }
 
-    @Published var theme: String {
+    @Published var themeMode: ThemeMode {
         didSet {
             guard !isLoading else { return }
-            Theme.reloadSelection(theme)
+            reloadSelectedTheme()
             applyAppAppearance()
             persistAndNotify()
         }
+    }
+
+    @Published var lightTheme: String {
+        didSet {
+            guard !isLoading else { return }
+            reloadSelectedTheme()
+            applyAppAppearance()
+            persistAndNotify()
+        }
+    }
+
+    @Published var darkTheme: String {
+        didSet {
+            guard !isLoading else { return }
+            reloadSelectedTheme()
+            applyAppAppearance()
+            persistAndNotify()
+        }
+    }
+
+    var theme: String {
+        activeThemeName
+    }
+
+    var activeThemeName: String {
+        themeMode == .dark ? darkTheme : lightTheme
+    }
+
+    var themeRefreshID: String {
+        "\(themeMode.rawValue):\(activeThemeName)"
     }
 
     @Published var fontFamily: String {
@@ -201,7 +231,9 @@ final class AppSettings: ObservableObject {
         self.persistDebounce = persistDebounce
 
         // Placeholders so `apply` can run from init; immediately overwritten.
-        theme = Theme.defaultDarkThemeName
+        themeMode = .dark
+        lightTheme = Theme.defaultLightThemeName
+        darkTheme = Theme.defaultDarkThemeName
         fontFamily = ""
         fontSize = Double(TerminalFont.defaultSize)
         fontWeight = .regular
@@ -217,7 +249,7 @@ final class AppSettings: ObservableObject {
         verticalTabBarWidth = Defaults.verticalTabBarWidth
 
         apply(Self.loadOrCreate(at: configURL))
-        Theme.reloadSelection(theme)
+        reloadSelectedTheme()
         isLoading = false
         observeAppTermination()
     }
@@ -237,7 +269,7 @@ final class AppSettings: ObservableObject {
         apply(config)
         isLoading = false
 
-        Theme.reloadSelection(theme)
+        reloadSelectedTheme()
         applyAppAppearance()
         NotificationCenter.default.post(name: .justtySettingsDidChange, object: nil)
     }
@@ -268,7 +300,9 @@ final class AppSettings: ObservableObject {
     }
 
     private func apply(_ config: JusttyConfigFile) {
-        theme = Self.resolvedTheme(config.theme)
+        themeMode = config.themeMode
+        lightTheme = Theme.resolvedName(config.lightTheme, for: .light)
+        darkTheme = Theme.resolvedName(config.darkTheme, for: .dark)
         fontFamily = TerminalFont.sanitizedFamily(config.font.family)
         fontSize = Self.resolvedFontSize(Double(config.font.size))
         fontWeight = FontWeightSetting(rawValue: config.font.weight) ?? .regular
@@ -284,6 +318,14 @@ final class AppSettings: ObservableObject {
         verticalTabBarWidth = Self.clamp(
             config.verticalTabBarWidth,
             to: Limits.verticalTabBarWidth
+        )
+    }
+
+    private func reloadSelectedTheme() {
+        Theme.reloadSelection(
+            themeMode: themeMode,
+            lightThemeName: lightTheme,
+            darkThemeName: darkTheme
         )
     }
 
@@ -344,7 +386,9 @@ final class AppSettings: ObservableObject {
 
     private func makeConfigFile() -> JusttyConfigFile {
         JusttyConfigFile(
-            theme: theme,
+            themeMode: themeMode,
+            lightTheme: lightTheme,
+            darkTheme: darkTheme,
             font: .init(
                 family: fontFamily,
                 size: Int(fontSize.rounded()),

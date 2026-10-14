@@ -121,9 +121,8 @@ struct TabBarView: View {
         .frame(height: JusttyConstants.tabBarHeight)
         .background {
             ZStack {
-                // Tie refresh to settings.theme; color comes from Theme selection.
                 Theme.backgroundColor
-                    .id(settings.theme)
+                    .id(settings.themeRefreshID)
                 WindowDragRegion()
             }
         }
