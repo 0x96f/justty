@@ -8,6 +8,18 @@ import Testing
 @testable import Justty
 
 struct JusttyTerminalConfigTests {
+    @Test @MainActor func hostConfigurationIsAcceptedByLibghostty() {
+        // Raw Ghostty keys can change independently of the Swift wrapper API.
+        let controller = TerminalController(
+            configSource: .none,
+            theme: JusttyTerminalConfig.ghosttyTheme(),
+            terminalConfiguration: JusttyTerminalConfig.terminalConfiguration(
+                command: JusttyTerminalConfig.makeLaunchCommand(shellPath: "/bin/zsh")
+            )
+        )
+        #expect(controller.lastConfigurationIssue == nil)
+    }
+
     @Test func makeLaunchCommandForPlainPath() {
         let command = JusttyTerminalConfig.makeLaunchCommand(shellPath: "/bin/zsh")
         #expect(command == "/bin/sh -c 'exec '\\''/bin/zsh'\\'' -l'")
