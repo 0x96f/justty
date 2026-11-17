@@ -35,7 +35,7 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     private var oscTitle: String?
     /// Polls the PTY foreground process so the tab chip shows command basename
     /// while busy and the login shell when idle (no push from libghostty).
-    private var titlePollTimer: Timer?
+    private(set) var titlePollTimer: Timer?
     var onExited: ((TerminalSession) -> Void)?
 
     var effectiveFontSize: Double {
@@ -59,9 +59,31 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     var hasRunningCommand: Bool {
         let foreground = terminalView.foregroundPid
         let name = foreground.flatMap(Self.processName(for:))
-        let result = Self.hasRunningCommand(
+        return Self.updateBusyState(
             foregroundPid: foreground,
             foregroundName: name,
+            shellName: shellName,
+            shellPid: &shellPid
+        )
+    }
+
+    /// A startup script may expose a child shell before the login shell itself.
+    /// Recover that initial guess only once its process is definitively gone.
+    static func updateBusyState(
+        foregroundPid: pid_t?,
+        foregroundName: String?,
+        shellName: String,
+        shellPid: inout pid_t?,
+        isKnownDead: ((pid_t) -> Bool)? = nil
+    ) -> Bool {
+        if let foregroundPid, let knownPid = shellPid,
+           foregroundPid != knownPid,
+           (isKnownDead?(knownPid) ?? Self.processIsKnownDead(knownPid)) {
+            shellPid = nil
+        }
+        let result = hasRunningCommand(
+            foregroundPid: foregroundPid,
+            foregroundName: foregroundName,
             shellName: shellName,
             shellPid: shellPid
         )
@@ -69,6 +91,11 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
             shellPid = locked
         }
         return result.isBusy
+    }
+
+    private static func processIsKnownDead(_ pid: pid_t) -> Bool {
+        // Permission failures and other probe errors do not establish exit.
+        kill(pid, 0) == -1 && errno == ESRCH
     }
 
     /// Pure busy policy for close-confirm without reading the live PTY.
@@ -83,13 +110,16 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
             return (false, nil)
         }
 
-        // Idle when the foreground process is our login shell (also locks in shellPid).
-        if foregroundName == shellName {
-            return (false, foregroundPid)
+        // Once identified, process identity wins over names: a child shell can
+        // have the same basename as the login shell while running a command.
+        if let shellPid {
+            let isShell = foregroundPid == shellPid
+            return (!isShell, isShell ? shellPid : nil)
         }
 
-        if let shellPid {
-            return (foregroundPid != shellPid, nil)
+        // Discover the login shell before its PID has been observed.
+        if foregroundName == shellName {
+            return (false, foregroundPid)
         }
 
         // Shell not observed yet: treat a non-shell foreground as busy, but
@@ -245,9 +275,16 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
 
     private func startTitlePolling() {
         stopTitlePolling()
-        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] timer in
             Task { @MainActor [weak self] in
-                self?.refreshTitleFromForeground()
+                // Native window teardown can release the session without a tab
+                // close callback. The run loop must not keep polling its nil owner.
+                guard let self else {
+                    timer.invalidate()
+                    return
+                }
+                guard timer.isValid, !self.hasExited else { return }
+                self.refreshTitleFromForeground()
             }
         }
         // Common mode keeps polling while the run loop is in tracking/event modes
@@ -265,21 +302,18 @@ final class TerminalSession: NSObject, ObservableObject, Identifiable {
     private func refreshTitleFromForeground() {
         let foreground = terminalView.foregroundPid
         let name = foreground.flatMap(Self.processName(for:))
-        let result = Self.hasRunningCommand(
+        let isBusy = Self.updateBusyState(
             foregroundPid: foreground,
             foregroundName: name,
             shellName: shellName,
-            shellPid: shellPid
+            shellPid: &shellPid
         )
-        if let locked = result.lockedShellPid {
-            shellPid = locked
-        }
         // Drop program OSC titles once the login shell is foreground again.
-        if !result.isBusy {
+        if !isBusy {
             oscTitle = nil
         }
         let next = Self.displayTitle(
-            isBusy: result.isBusy,
+            isBusy: isBusy,
             foregroundName: name,
             shellName: shellName,
             oscTitle: oscTitle,

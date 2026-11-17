@@ -8,6 +8,24 @@ import Testing
 @testable import Justty
 
 struct JusttyTerminalConfigTests {
+    @Test(arguments: [(1.234, "23.4%"), (0.876, "-12.4%"), (1.05, "5%")])
+    @MainActor func cellHeightUsesGhosttyNumericSyntax(lineHeight: Double, expected: String) throws {
+        let adjustment = try #require(JusttyTerminalConfig.cellHeightAdjustment(for: lineHeight))
+        #expect(adjustment == expected)
+        let configuration = TerminalConfiguration { builder in
+            builder.withCustom("adjust-cell-height", adjustment)
+        }
+        let controller = TerminalController(
+            configSource: .none,
+            terminalConfiguration: configuration
+        )
+        #expect(controller.lastConfigurationIssue == nil)
+    }
+
+    @Test func defaultLineHeightNeedsNoAdjustment() {
+        #expect(JusttyTerminalConfig.cellHeightAdjustment(for: 1) == nil)
+    }
+
     @Test @MainActor func hostConfigurationIsAcceptedByLibghostty() {
         // Raw Ghostty keys can change independently of the Swift wrapper API.
         let controller = TerminalController(

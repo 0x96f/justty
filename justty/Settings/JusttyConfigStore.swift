@@ -77,7 +77,7 @@ struct JusttyConfigFile: Codable, Equatable {
                 if let intSize = try? container.decode(Int.self, forKey: .size) {
                     size = intSize
                 } else if let doubleSize = try? container.decode(Double.self, forKey: .size) {
-                    size = Int(doubleSize.rounded())
+                    size = Int(exactly: doubleSize.rounded()) ?? defaults.size
                 } else {
                     size = defaults.size
                 }

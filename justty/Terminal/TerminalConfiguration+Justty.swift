@@ -31,12 +31,8 @@ enum JusttyTerminalConfig {
                 "wght=\(settings.fontWeight.variationWeight)"
             )
             // Ghostty uses a relative cell-height adjustment, not a CSS multiplier.
-            let cellHeightPercent = (settings.lineHeight - 1.0) * 100
-            if cellHeightPercent != 0 {
-                let formatted = cellHeightPercent.formatted(
-                    .number.precision(.fractionLength(0...1))
-                )
-                builder.withCustom("adjust-cell-height", "\(formatted)%")
+            if let adjustment = cellHeightAdjustment(for: settings.lineHeight) {
+                builder.withCustom("adjust-cell-height", adjustment)
             }
             builder.withCursorStyle(.block)
             builder.withCursorStyleBlink(true)
@@ -61,6 +57,18 @@ enum JusttyTerminalConfig {
             builder.withCustom("clipboard-write", "allow")
             builder.withCustom("clipboard-paste-protection", "false")
         }
+    }
+
+    static func cellHeightAdjustment(for lineHeight: Double) -> String? {
+        let percent = (lineHeight - 1.0) * 100
+        guard percent != 0 else { return nil }
+        // Raw Ghostty configuration requires ASCII numbers regardless of the UI locale.
+        let formatted = percent.formatted(
+            .number.locale(Locale(identifier: "en_US_POSIX"))
+                .grouping(.never)
+                .precision(.fractionLength(0...1))
+        )
+        return "\(formatted)%"
     }
 
     static func ghosttyTheme() -> GhosttyTerminal.TerminalTheme {

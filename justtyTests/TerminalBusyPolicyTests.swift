@@ -4,6 +4,7 @@
 //
 
 import Darwin
+import Foundation
 import Testing
 @testable import Justty
 
@@ -51,6 +52,121 @@ struct TerminalBusyPolicyTests {
         )
         #expect(result.isBusy == false)
         #expect(result.lockedShellPid == 100)
+    }
+
+    @Test func sameNameChildShellIsBusyWithoutReplacingLoginShellPid() {
+        let result = TerminalSession.hasRunningCommand(
+            foregroundPid: 200,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            shellPid: 100
+        )
+        #expect(result.isBusy)
+        #expect(result.lockedShellPid == nil)
+        #expect(TabManager.shouldConfirmClose(
+            fromShellExit: false,
+            skipConfirm: false,
+            hasRunningCommand: result.isBusy,
+            confirmEnabled: true
+        ))
+    }
+
+    @Test func knownShellPidDoesNotRequireProcessName() {
+        let result = TerminalSession.hasRunningCommand(
+            foregroundPid: 100,
+            foregroundName: nil,
+            shellName: "zsh",
+            shellPid: 100
+        )
+        #expect(!result.isBusy)
+        #expect(result.lockedShellPid == 100)
+    }
+
+    @Test func exitedStartupChildAllowsLoginShellRediscovery() {
+        var shellPid: pid_t?
+        #expect(!TerminalSession.updateBusyState(
+            foregroundPid: 200,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            shellPid: &shellPid,
+            isKnownDead: { _ in
+                Issue.record("No PID should be probed before shell discovery")
+                return false
+            }
+        ))
+        #expect(shellPid == 200)
+
+        #expect(!TerminalSession.updateBusyState(
+            foregroundPid: 100,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            shellPid: &shellPid,
+            isKnownDead: { $0 == 200 }
+        ))
+        #expect(shellPid == 100)
+
+        // A living login shell must stay recorded when another shell runs.
+        #expect(TerminalSession.updateBusyState(
+            foregroundPid: 300,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            shellPid: &shellPid,
+            isKnownDead: { _ in false }
+        ))
+        #expect(shellPid == 100)
+
+        #expect(!TerminalSession.updateBusyState(
+            foregroundPid: 100,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            shellPid: &shellPid,
+            isKnownDead: { _ in
+                Issue.record("The known foreground shell needs no liveness probe")
+                return true
+            }
+        ))
+        #expect(shellPid == 100)
+    }
+
+    @Test func uncertainShellLivenessPreservesKnownPid() {
+        var shellPid: pid_t? = 100
+        #expect(TerminalSession.updateBusyState(
+            foregroundPid: 200,
+            foregroundName: "zsh",
+            shellName: "zsh",
+            shellPid: &shellPid,
+            isKnownDead: { _ in false }
+        ))
+        #expect(shellPid == 100)
+    }
+
+    @Test func abandonedSessionInvalidatesPollingTimerOnNextTick() async throws {
+        var session: TerminalSession? = TerminalSession()
+        weak var releasedSession = session
+        let timer = try #require(session?.titlePollTimer)
+        session = nil
+        #expect(releasedSession == nil)
+
+        timer.fire()
+        // The timer dispatches its owner check onto the main actor.
+        for _ in 0..<100 where timer.isValid {
+            await Task.yield()
+        }
+        #expect(!timer.isValid)
+        timer.invalidate()
+    }
+
+    @Test func unmountedSessionKeepsPollingUntilExplicitTermination() async throws {
+        let session = TerminalSession()
+        let timer = try #require(session.titlePollTimer)
+        defer { session.terminate() }
+        timer.fire()
+        await Task.yield()
+        #expect(timer.isValid)
+
+        session.terminate()
+        #expect(!timer.isValid)
+        #expect(session.titlePollTimer == nil)
     }
 
     @Test func launchShWrapperIsIgnoredBeforeShellLock() {

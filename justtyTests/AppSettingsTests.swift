@@ -74,6 +74,31 @@ struct AppSettingsTests {
         #expect(settings.fontSize == AppSettings.Limits.fontSize.upperBound)
     }
 
+    @Test(arguments: ["1.0e30", "-1.0e30", ".inf", "-.inf", ".nan"])
+    func invalidFloatingFontSizesUseDefaultOnLoadAndReload(value: String) throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+        let yaml = "font: { size: \(value) }"
+        try yaml.write(to: url, atomically: true, encoding: .utf8)
+
+        #expect(try JusttyConfigStore.load(from: url).font.size == JusttyConfigFile.Font.default.size)
+        let settings = makeSettings(configURL: url)
+        #expect(settings.fontSize == Double(TerminalFont.defaultSize))
+
+        settings.fontSize = 20
+        try yaml.write(to: url, atomically: true, encoding: .utf8)
+        settings.reloadFromDisk()
+        #expect(settings.fontSize == Double(TerminalFont.defaultSize))
+    }
+
+    @Test(arguments: [("1.8e1", 18), ("17.6", 18), ("17.4", 17)])
+    func legacyFloatingFontSizesStillRound(value: String, expected: Int) throws {
+        let url = try makeTempConfigURL()
+        defer { cleanup(url) }
+        try "font: { size: \(value) }".write(to: url, atomically: true, encoding: .utf8)
+        #expect(try JusttyConfigStore.load(from: url).font.size == expected)
+    }
+
     @Test func terminalPaddingClampsToLimits() throws {
         let url = try makeTempConfigURL()
         defer { cleanup(url) }
