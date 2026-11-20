@@ -136,7 +136,7 @@ jobs:
           fi
           SHA="$(shasum -a 256 Justty-macos.zip | awk '{print $1}')"
           gh auth setup-git
-          git clone --depth 1 "https://github.com/0x96f/homebrew-justty.git" tap
+          git clone --depth 1 "https://github.com/0x96f/homebrew-forge.git" tap
           CASK_FILE="tap/Casks/justty.rb"
           if [ ! -f "$CASK_FILE" ]; then
             echo "::error::$CASK_FILE not found in tap."

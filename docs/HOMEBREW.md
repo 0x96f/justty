@@ -1,15 +1,11 @@
 # Homebrew
 
-Justty ships via the personal tap [`0x96f/homebrew-justty`](https://github.com/0x96f/homebrew-justty) (not official `homebrew-cask` — the app is self-signed / not notarized).
+Justty ships via the [0x96f Forge tap](https://github.com/0x96f/homebrew-forge).
 
 ## Install
 
-Homebrew 6+ requires trusting third-party taps before install:
-
 ```bash
-brew trust --tap 0x96f/justty
-brew tap 0x96f/justty
-brew install --cask justty
+brew install --cask 0x96f/forge/justty
 ```
 
 The cask clears Gatekeeper quarantine in `postflight_steps`, so brew users should not need the manual `xattr` step. Builds are still self-signed — verify the leaf SHA-256 fingerprint (see [SIGNING.md](SIGNING.md)).
@@ -20,7 +16,7 @@ The [release workflow](../.github/workflows/release.yml) updates `Casks/justty.r
 
 | Secret               | Purpose                                                                           |
 | -------------------- | --------------------------------------------------------------------------------- |
-| `HOMEBREW_TAP_TOKEN` | PAT (classic or fine-grained) with **contents: write** on `0x96f/homebrew-justty` |
+| `HOMEBREW_TAP_TOKEN` | PAT (classic or fine-grained) with **contents: write** on `0x96f/homebrew-forge` |
 
 Create a fine-grained token scoped to that repo only, then:
 
